@@ -129,25 +129,22 @@ def ensure_pagefile():
     return update_pagefile(PDF_DIR, PAGE_FILE)
 
 def query_llama(prompt):
-    #url = "http://localhost:11434"
     url = "http://localhost:11434/api/generate"
-    data = {"model": "GandalfBaum/llama3.1-claude3.7:latest", "prompt": prompt}
+    # data = {"model": "GandalfBaum/llama3.1-claude3.7:latest", "prompt": prompt}
+    data = {"model": "llama3.2:latest", "prompt": prompt}
     resp = requests.post(url, json=data, stream=True)
     text = ""
     for line in resp.iter_lines():
         if not line:
             continue
-
         try:
             obj = json.loads(line.decode("utf-8"))
         except json.JSONDecodeError:
             continue  # skip malformed lines
-
         if "response" in obj:
             text += obj["response"]   # collect partial response
         if obj.get("done", False):
             break
-
     return text
 
 def query_rag_llama3(query, index, chunks, k=TOPK):
@@ -160,10 +157,40 @@ def query_rag_llama3(query, index, chunks, k=TOPK):
     ans = query_llama(prompt)
     return ans, list(zip(D[0].tolist(), I[0].tolist()))
 
+def query_deepseek(prompt, model="deepseek-coder:6.7b"):
+    url = "http://localhost:11434/api/generate"
+    data = {"model": model, "prompt": prompt, "stream": True}
+    resp = requests.post(url, json=data, stream=True)
+
+    text = ""
+    for line in resp.iter_lines():
+        if not line:
+            continue
+        try:
+            obj = json.loads(line.decode("utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if "response" in obj:
+            text += obj["response"]
+        if obj.get("done", False):
+            break
+    return text.strip()
+
+def query_rag_deepseek(query, index, chunks, k=TOPK):
+    qvec = encode([query])
+    D, I = index.search(qvec, k)
+    retrieved = [chunks[i] for i in I[0]]
+    context = "\n\n".join(retrieved)
+    prompt = f"Answer based on context:\n{context}\n\nQuestion: {query}\nAnswer:"
+    print("Debug: Prompt to LLaMA3.2:\n", prompt)
+    ans = query_deepseek(prompt, model="deepseek-coder:6.7b")
+    return ans, list(zip(D[0].tolist(), I[0].tolist()))
+
 if __name__ == "__main__":
     ix,X,chunks,metas,manifest = ensure_pagefile()
     #ans, scores = query_rag("What is COCOMO?", ix, chunks, k=TOPK)
-    ans, scores = query_rag_llama3("What is COCOMO?", ix, chunks, k=TOPK)
+    # ans, scores = query_rag_llama3("What is COCOMO?", ix, chunks, k=TOPK)
+    ans, scores = query_rag_deepseek("What is COCOMO?", ix, chunks, k=TOPK)
 
     show_page_table(chunks, metas, scores)
     print("\n---\n", ans)
