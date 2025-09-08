@@ -5,6 +5,10 @@ from PyPDF2 import PdfReader
 import openai
 import requests
 import json
+import os
+from google import genai
+from google.genai import types
+
 
 PDF_DIR = "docs"
 PAGE_FILE = "page.file"
@@ -186,11 +190,103 @@ def query_rag_deepseek(query, index, chunks, k=TOPK):
     ans = query_deepseek(prompt, model="deepseek-coder:6.7b")
     return ans, list(zip(D[0].tolist(), I[0].tolist()))
 
+openai.api_key = "YOUR_API_KEY"
+
+def query_rag_openai(query, index, chunks, metas, k=TOPK):
+    """
+    Performs retrieval using FAISS and then queries OpenAI for a response.
+    """
+    # Retrieve top-k chunks
+    qvec = encode([query])
+    D, I = index.search(qvec, k)
+    retrieved = [chunks[i] for i in I[0]]
+    context = "\n\n".join(retrieved)
+
+    # Build prompt
+    prompt = f"Answer based on context:\n{context}\n\nQuestion: {query}\nAnswer:"
+
+    # Call OpenAI API
+    resp = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # or gpt-4o-mini, gpt-5 if available
+        messages=[{"role": "user", "content": prompt}]
+    )
+    answer = resp.choices[0].message["content"]
+
+    # Return answer + semantic scores for debug
+    scores = list(zip(D[0].tolist(), I[0].tolist()))
+    return answer, scores
+
+def query_rag_perplexity(query, index, chunks, k=TOPK):
+    # Encode query and retrieve top-k chunks
+    qvec = encode([query])
+    D, I = index.search(qvec, k)
+    retrieved = [chunks[i] for i in I[0]]
+    context = "\n\n".join(retrieved)
+
+    # Construct the prompt
+    prompt = f"Answer based on context:\n{context}\n\nQuestion: {query}\nAnswer:"
+
+    # Perplexity API endpoint
+    url = "https://api.perplexity.ai/chat/completions"
+
+    # Headers with your API key
+    headers = {
+        "Authorization": f"Bearer {os.getenv("PERPLEXITY_API_KEY")}",
+        "Content-Type": "application/json"
+    }
+
+    # API request payload
+    payload = {
+        "model": "perplexity/sonar-small-online",  # you can change this to another model
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.5,
+        "max_tokens": 500
+    }
+
+    # Make the API call
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        answer = response.json()["choices"][0]["message"]["content"]
+    else:
+        answer = f"Error: {response.status_code}, {response.text}"
+
+    # Return the answer and the scores of retrieved chunks
+    scores = list(zip(D[0].tolist(), I[0].tolist()))
+    return answer, scores
+
+def query_rag_gemini(query, index, chunks, k=5):
+    # Retrieve top-k chunks
+    qvec = encode([query])
+    D, I = index.search(qvec, k)
+    retrieved = [chunks[i] for i in I[0]]
+    context = "\n\n".join(retrieved)
+
+    prompt = f"Answer based on context:\n{context}\n\nQuestion: {query}\nAnswer:"
+
+    # Initialize the Gemini client
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+    # Generate a response using the Gemini API
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",  # Replace with your desired model
+        contents=prompt
+    )
+
+    answer = response.text
+
+    # Return the answer and the retrieval scores
+    scores = list(zip(D[0].tolist(), I[0].tolist()))
+    return answer, scores
+
 if __name__ == "__main__":
     ix,X,chunks,metas,manifest = ensure_pagefile()
-    #ans, scores = query_rag("What is COCOMO?", ix, chunks, k=TOPK)
-    # ans, scores = query_rag_llama3("What is COCOMO?", ix, chunks, k=TOPK)
-    ans, scores = query_rag_deepseek("What is COCOMO?", ix, chunks, k=TOPK)
+    #ans, scores = query_rag("Give me 50 use cases for a food delivery app with description from the pdfs provided to you", ix, chunks, k=TOPK)
+    # ans, scores = query_rag_llama3("Give me 50 use cases for a food delivery app with description from the pdfs provided to you", ix, chunks, k=TOPK)
+    ans, scores = query_rag_deepseek("Give me 50 use cases for a food delivery app with description from the pdfs provided to you", ix, chunks, k=TOPK)
+    #ans, scores = query_rag_openai("Give me 50 use cases for a food delivery app with description from the pdfs provided to you", ix, chunks, metas, k=TOPK)
+    #ans, scores = query_rag_perplexity("Give me 50 use cases for a food delivery app with description from the pdfs provided to you", ix, chunks, k=TOPK)
+    #ans, scores = query_rag_gemini("Give me 50 use cases for a food delivery app with description from the pdfs provided to you.", ix, chunks, k=5)
 
     show_page_table(chunks, metas, scores)
     print("\n---\n", ans)
