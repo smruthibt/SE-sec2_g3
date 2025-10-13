@@ -41,7 +41,7 @@ This Docker Compose setup includes three main services:
 
 ### 1. Navigate to the project directory
 ```bash
-cd "/Users/soham/My Stuff/NCSU/Sem1/Software Engineering/SE-sec2_g3/proj2"
+cd "/proj2"
 ```
 
 ### 2. Start the services
