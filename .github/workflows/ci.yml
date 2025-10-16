@@ -1,0 +1,29 @@
+name: Judge0 CI Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pytest requests
+
+      - name: Run Judge0 API tests
+        env:
+          JUDGE0_URL: http://104.236.56.159:2358
+        run: |
+          echo "Running tests against $JUDGE0_URL"
+          pytest -q
