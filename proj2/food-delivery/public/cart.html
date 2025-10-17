@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Food<span class="text-danger">Express</span></a>
+        <div class="ms-auto">
+          <a class="btn btn-outline-primary me-2" href="/orders.html">My Orders</a>
+          <a class="btn btn-primary" href="/cart.html">Cart</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <h3>My Cart</h3>
+      <div id="cart"></div>
+      <div id="summary" class="mt-3"></div>
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="clearCart()">Clear Cart</button>
+        <button class="btn btn-success" onclick="checkout()">Checkout</button>
+      </div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+      async function loadCart() {
+        const res = await fetch('/api/cart');
+        const items = await res.json();
+        const container = document.getElementById('cart');
+        if (!Array.isArray(items) || items.length === 0) {
+          container.innerHTML = '<div class="alert alert-info">Your cart is empty.</div>';
+          document.getElementById('summary').innerHTML = '';
+          return;
+        }
+
+        let subtotal = 0;
+        container.innerHTML = items.map(i => {
+          const price = i.menuItemId?.price || 0;
+          const name = i.menuItemId?.name || 'Item';
+          const line = price * i.quantity;
+          subtotal += line;
+          return `
+            <div class="card mb-2 shadow-sm">
+              <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold">${name}</div>
+                  <div class="text-secondary small">$${price.toFixed(2)} × 
+                    <input type="number" min="1" value="${i.quantity}" style="width:70px" 
+                           onchange="updateQty('${i._id}', this.value)">
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="fw-bold">$${line.toFixed(2)}</div>
+                  <button class="btn btn-outline-danger btn-sm" onclick="removeItem('${i._id}')">Remove</button>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('summary').innerHTML = `
+          <div class="card">
+            <div class="card-body d-flex justify-content-between">
+              <span class="fw-semibold">Subtotal</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="card-footer text-secondary small">Delivery fee added at checkout</div>
+          </div>`;
+      }
+
+      async function updateQty(id, qty) {
+        const res = await fetch('/api/cart/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: Number(qty) })
+        });
+        if (res.ok) {
+          loadCart();
+        } else {
+          const err = await res.json();
+          showToast('Error: ' + (err.error || 'Unable to update'), true);
+        }
+      }
+
+      async function removeItem(id) {
+        const res = await fetch('/api/cart/' + id, { method: 'DELETE' });
+        if (res.ok) loadCart();
+      }
+
+      async function clearCart() {
+        const res = await fetch('/api/cart', { method: 'DELETE' });
+        if (res.ok) loadCart();
+      }
+
+      async function checkout() {
+        const res = await fetch('/api/orders', { method: 'POST' });
+        const data = await res.json();
+        if (res.status === 201) {
+          showToast('Order placed!');
+          window.location.href = '/orders.html';
+        } else {
+          showToast('Error: ' + (data.error || 'Unable to checkout'), true);
+        }
+      }
+
+      loadCart();
+    </script>
+  </body>
+</html>

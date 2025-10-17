@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Orders</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Food<span class="text-danger">Express</span></a>
+        <div class="ms-auto">
+          <a class="btn btn-outline-primary me-2" href="/orders.html">My Orders</a>
+          <a class="btn btn-primary" href="/cart.html">Cart</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <h3>My Orders</h3>
+      <div id="orders" class="mt-3"></div>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+      async function loadOrders() {
+        const res = await fetch('/api/orders');
+        const orders = await res.json();
+        const wrap = document.getElementById('orders');
+        if (!Array.isArray(orders) || orders.length === 0) {
+          wrap.innerHTML = '<div class="alert alert-info">No orders yet.</div>';
+          return;
+        }
+        wrap.innerHTML = orders.map(o => {
+          const rows = o.items.map(it => `
+            <tr>
+              <td>${it.name}</td>
+              <td>${it.quantity}</td>
+              <td>$${it.price.toFixed(2)}</td>
+              <td>$${(it.price * it.quantity).toFixed(2)}</td>
+            </tr>`).join('');
+          return `
+            <div class="card mb-3 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <div class="fw-semibold">Order #${o._id}</div>
+                    <div class="text-secondary small">${new Date(o.createdAt).toLocaleString()}</div>
+                    <div class="badge bg-secondary mt-2 text-uppercase">${o.status.replaceAll('_',' ')}</div>
+                  </div>
+                  <div class="text-end">
+                    <div>Subtotal: <strong>$${o.subtotal.toFixed(2)}</strong></div>
+                    <div>Delivery: <strong>$${o.deliveryFee.toFixed(2)}</strong></div>
+                    <div>Total: <span class="fs-5 fw-bold">$${o.total.toFixed(2)}</span></div>
+                  </div>
+                </div>
+                <div class="table-responsive mt-3">
+                  <table class="table table-sm mb-0">
+                    <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Line</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+      loadOrders();
+    </script>
+  </body>
+</html>
