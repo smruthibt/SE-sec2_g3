@@ -5,10 +5,10 @@
     "description": "Write a program that reads two integers and prints their sum.",
     "difficulty": "easy",
     "templates": {
-      "python": "a = int(input())\nb = int(input())\nprint(a + b)",
-      "cpp": "#include <iostream>\nusing namespace std;\nint main(){int a,b;cin>>a>>b;cout<<a+b;return 0;}",
-      "java": "import java.util.*;class Main{public static void main(String[] args){Scanner sc=new Scanner(System.in);int a=sc.nextInt(),b=sc.nextInt();System.out.println(a+b);}}",
-      "javascript": "const a = parseInt(prompt());\nconst b = parseInt(prompt());\nconsole.log(a + b);"
+      "python": "# TODO: Read two integers and print their sum\na = int(input())\nb = int(input())\n# Write your logic here\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int a, b;\n    cin >> a >> b;\n    // TODO: print their sum here\n    return 0;\n}\n",
+      "java": "import java.util.*;\nclass Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int a = sc.nextInt();\n    int b = sc.nextInt();\n    // TODO: print the sum\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst [a, b] = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n// TODO: print their sum\n"
     }
   },
   {
@@ -17,10 +17,10 @@
     "description": "Read N integers and print the maximum value among them.",
     "difficulty": "medium",
     "templates": {
-      "python": "n = int(input())\nnums = list(map(int, input().split()))\nprint(max(nums))",
-      "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nint main(){int n;cin>>n;vector<int> a(n);for(int i=0;i<n;i++)cin>>a[i];cout<<*max_element(a.begin(),a.end());}",
-      "java": "import java.util.*;class Main{public static void main(String[] args){Scanner sc=new Scanner(System.in);int n=sc.nextInt();int max=Integer.MIN_VALUE;for(int i=0;i<n;i++){int x=sc.nextInt();if(x>max)max=x;}System.out.println(max);}}",
-      "javascript": "const n=parseInt(prompt());const arr=prompt().split(' ').map(Number);console.log(Math.max(...arr));"
+      "python": "# TODO: Read N and the numbers, then print the maximum\nn = int(input())\nnums = list(map(int, input().split()))\n# Write your logic here\n",
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for(int i=0;i<n;i++) cin >> arr[i];\n    // TODO: Find and print maximum value\n    return 0;\n}\n",
+      "java": "import java.util.*;\nclass Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    int[] arr = new int[n];\n    for(int i=0;i<n;i++) arr[i] = sc.nextInt();\n    // TODO: find and print maximum\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst data = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst n = data[0];\nconst arr = data.slice(1);\n// TODO: find and print maximum\n"
     }
   },
   {
@@ -29,10 +29,154 @@
     "description": "Write a program to compute factorial of a number N.",
     "difficulty": "medium",
     "templates": {
-      "python": "n=int(input())\nres=1\nfor i in range(1,n+1):res*=i\nprint(res)",
-      "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nint main(){int n;cin>>n;long long res=1;for(int i=1;i<=n;i++)res*=i;cout<<res;}",
-      "java": "import java.util.*;class Main{public static void main(String[] args){Scanner sc=new Scanner(System.in);int n=sc.nextInt();long res=1;for(int i=1;i<=n;i++)res*=i;System.out.println(res);}}",
-      "javascript": "const n=parseInt(prompt());let res=1;for(let i=1;i<=n;i++)res*=i;console.log(res);"
+      "python": "# TODO: Read N and compute factorial\nn = int(input())\n# Write your logic here\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    // TODO: compute factorial and print\n    return 0;\n}\n",
+      "java": "import java.util.*;\nclass Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    // TODO: compute factorial and print\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst n = parseInt(fs.readFileSync(0, 'utf8'));\n// TODO: compute factorial and print\n"
+    }
+  },
+  {
+    "id": 4,
+    "title": "Even or Odd",
+    "description": "Read an integer and print 'EVEN' or 'ODD'.",
+    "difficulty": "easy",
+    "templates": {
+      "python": "x = int(input())\n# TODO: check if x is even or odd and print result\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int x; cin >> x;\n    // TODO: check even or odd\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int x = sc.nextInt();\n    // TODO: check even or odd\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst x = parseInt(fs.readFileSync(0, 'utf8'));\n// TODO: check even or odd\n"
+    }
+  },
+  {
+    "id": 5,
+    "title": "Hello, Name!",
+    "description": "Read a name and print 'Hello, <name>!'.",
+    "difficulty": "easy",
+    "templates": {
+      "python": "name = input().strip()\n# TODO: print greeting message\n",
+      "cpp": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\n    string name; getline(cin, name);\n    // TODO: print greeting message\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String name = sc.nextLine();\n    // TODO: print greeting message\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst name = fs.readFileSync(0, 'utf8').trim();\n// TODO: print greeting message\n"
+    }
+  },
+  {
+    "id": 6,
+    "title": "Count Vowels",
+    "description": "Given a string, count and print the number of vowels.",
+    "difficulty": "easy",
+    "templates": {
+      "python": "s = input().strip()\n# TODO: count vowels and print result\n",
+      "cpp": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\n    string s; cin >> s;\n    // TODO: count vowels\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String s = sc.next();\n    // TODO: count vowels\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst s = fs.readFileSync(0, 'utf8').trim();\n// TODO: count vowels\n"
+    }
+  },
+  {
+    "id": 7,
+    "title": "Reverse Words",
+    "description": "Reverse the order of words in a given line.",
+    "difficulty": "medium",
+    "templates": {
+      "python": "line = input().strip()\n# TODO: reverse words and print result\n",
+      "cpp": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\n    string line; getline(cin, line);\n    // TODO: reverse words\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String line = sc.nextLine();\n    // TODO: reverse words\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst line = fs.readFileSync(0, 'utf8').trim();\n// TODO: reverse words\n"
+    }
+  },
+  {
+    "id": 8,
+    "title": "Balanced Parentheses",
+    "description": "Given a string of parentheses, check if it is balanced.",
+    "difficulty": "hard",
+    "templates": {
+      "python": "s = input().strip()\n# TODO: check if parentheses are balanced and print result\n",
+      "cpp": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\n    string s; cin >> s;\n    // TODO: check balance\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String s = sc.next();\n    // TODO: check balance\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst s = fs.readFileSync(0, 'utf8').trim();\n// TODO: check balance\n"
+    }
+  },
+  {
+    "id": 9,
+    "title": "Two Sum",
+    "description": "Given an array and target, find two indices such that their values sum to the target.",
+    "difficulty": "hard",
+    "templates": {
+      "python": "# TODO: implement two sum logic\nn = int(input())\narr = list(map(int, input().split()))\ntarget = int(input())\n",
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    vector<int> arr(n);\n    for(int i=0;i<n;i++) cin >> arr[i];\n    int target; cin >> target;\n    // TODO: implement two sum logic\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    int[] arr = new int[n];\n    for(int i=0;i<n;i++) arr[i]=sc.nextInt();\n    int target = sc.nextInt();\n    // TODO: implement two sum logic\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst data = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n// TODO: implement two sum logic\n"
+    }
+  },
+  {
+    "id": 10,
+    "title": "Palindrome Check",
+    "description": "Read a string and print 'YES' if it is a palindrome, otherwise 'NO'.",
+    "difficulty": "easy",
+    "templates": {
+      "python": "s = input().strip()\n# TODO: check if palindrome and print YES/NO\n",
+      "cpp": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\n    string s; cin >> s;\n    // TODO: check palindrome\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String s = sc.next();\n    // TODO: check palindrome\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst s = fs.readFileSync(0, 'utf8').trim();\n// TODO: check palindrome\n"
+    }
+  },
+  {
+    "id": 11,
+    "title": "Sum of Array Elements",
+    "description": "Read N and an array of N integers. Print the sum of all elements.",
+    "difficulty": "easy",
+    "templates": {
+      "python": "n = int(input())\narr = list(map(int, input().split()))\n# TODO: compute and print sum\n",
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    vector<int> arr(n);\n    for(int i=0;i<n;i++) cin >> arr[i];\n    // TODO: compute and print sum\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    int[] arr = new int[n];\n    for(int i=0;i<n;i++) arr[i] = sc.nextInt();\n    // TODO: compute and print sum\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst data = fs.readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n// TODO: compute and print sum\n"
+    }
+  },
+  {
+    "id": 12,
+    "title": "Prime Number Check",
+    "description": "Read an integer N and print 'YES' if it is prime, else 'NO'.",
+    "difficulty": "medium",
+    "templates": {
+      "python": "n = int(input())\n# TODO: check if prime and print YES/NO\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    // TODO: check if prime\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    // TODO: check if prime\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst n = parseInt(fs.readFileSync(0, 'utf8'));\n// TODO: check if prime\n"
+    }
+  },
+  {
+    "id": 13,
+    "title": "Matrix Diagonal Sum",
+    "description": "Read N and an N×N matrix. Print the sum of both diagonals.",
+    "difficulty": "medium",
+    "templates": {
+      "python": "n = int(input())\n# TODO: read matrix and sum both diagonals\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    // TODO: read matrix and sum diagonals\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    // TODO: read matrix and sum diagonals\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst data = fs.readFileSync(0,'utf8').trim().split(/\\s+/).map(Number);\n// TODO: read matrix and sum diagonals\n"
+    }
+  },
+  {
+    "id": 14,
+    "title": "Fibonacci Sequence",
+    "description": "Read an integer N and print the first N Fibonacci numbers separated by spaces.",
+    "difficulty": "medium",
+    "templates": {
+      "python": "n = int(input())\n# TODO: print first n Fibonacci numbers\n",
+      "cpp": "#include <iostream>\nusing namespace std;\nint main(){\n    int n; cin >> n;\n    // TODO: print first n Fibonacci numbers\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    // TODO: print first n Fibonacci numbers\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst n = parseInt(fs.readFileSync(0, 'utf8'));\n// TODO: print first n Fibonacci numbers\n"
+    }
+  },
+  {
+    "id": 15,
+    "title": "Longest Word",
+    "description": "Read a line of text and print the longest word.",
+    "difficulty": "hard",
+    "templates": {
+      "python": "line = input().strip()\n# TODO: find and print the longest word\n",
+      "cpp": "#include <iostream>\n#include <string>\n#include <sstream>\nusing namespace std;\nint main(){\n    string line; getline(cin, line);\n    // TODO: find longest word\n    return 0;\n}\n",
+      "java": "import java.util.*; class Main{\n  public static void main(String[] args){\n    Scanner sc = new Scanner(System.in);\n    String line = sc.nextLine();\n    // TODO: find longest word\n  }\n}\n",
+      "javascript": "const fs = require('fs');\nconst line = fs.readFileSync(0, 'utf8').trim();\n// TODO: find and print the longest word\n"
     }
   }
 ]
