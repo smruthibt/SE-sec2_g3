@@ -1,52 +1,161 @@
 import React from "react";
 
 export default function TestList({ tests = [], results = {}, running }) {
-  // results shape: { [testId]: { status: "pass"|"fail"|"error"|"pending", got: "stdout", expected: "..." } }
   return (
-    <div className="mt-3 p-3 rounded" style={{ background: "#1b1b1b", color: "#ddd" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h4 style={{ margin: 0 }}>Test Cases</h4>
-        {running ? <span style={{ fontSize: 12, opacity: 0.8 }}>Running…</span> : null}
+    <div
+      style={{
+        marginTop: 16,
+        borderRadius: 12,
+        border: "1px solid #1e2b3f",
+        background:
+          "linear-gradient(180deg, rgba(16,30,43,0.85) 0%, rgba(9,18,28,0.85) 100%)",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: "12px 14px",
+          background: "#0b1a27",
+          borderBottom: "1px solid #1e2b3f",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "#d9f1ff" }}>
+            Test Cases
+          </span>
+          {running && (
+            <span style={{ fontSize: 12, color: "#97b3c7", opacity: 0.9 }}>
+              Running…
+            </span>
+          )}
+        </div>
       </div>
-      <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0" }}>
+
+      {/* List */}
+      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {tests.map((t) => {
           const r = results[t.id];
-          const badge = r?.status === "pass"
-            ? "✅"
-            : r?.status === "fail"
-            ? "❌"
-            : r?.status === "error"
-            ? "⚠️"
-            : "⏳";
+          const status = r?.status ?? "pending";
+          const isPass = status === "pass";
+          const isFail = status === "fail";
+          const isErr = status === "error";
+
+          const badge =
+            status === "pass"
+              ? "✅"
+              : status === "fail"
+              ? "❌"
+              : status === "error"
+              ? "⚠️"
+              : "⏳";
+
+          const rightTextColor =
+            isPass ? "#00ff99" : isFail ? "#ff6b6b" : isErr ? "#ffd166" : "#97b3c7";
 
           return (
-            <li key={t.id} style={{ borderTop: "1px solid #333", padding: "10px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>
-                    {badge} {t.unlocked ? `#${t.id} (unlocked)` : `#${t.id} (locked)`}
-                  </div>
-                  {t.unlocked ? (
-                    <div style={{ fontSize: 13, opacity: 0.9, marginTop: 6 }}>
-                      <div><strong>Input:</strong> <code>{JSON.stringify(t.input)}</code></div>
-                      <div><strong>Expected:</strong> <code>{JSON.stringify(t.expected)}</code></div>
-                      {r && r.status && (
-                        <div style={{ marginTop: 6 }}>
-                          <div><strong>Got:</strong> <code>{JSON.stringify(r.got ?? "")}</code></div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 13, opacity: 0.7, marginTop: 6 }}>
-                      Hidden input and expected output.
-                    </div>
-                  )}
+            <li
+              key={t.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 12,
+                padding: "12px 14px",
+                borderTop: "1px solid #132232",
+                background: "transparent",
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 18 }}>{badge}</span>
+                  <span style={{ fontWeight: 600, color: "#d9f1ff" }}>
+                    #{t.id} {t.unlocked ? "(unlocked)" : "(locked)"}
+                  </span>
                 </div>
-                {r?.status && (
-                  <div style={{ minWidth: 70, textAlign: "right", fontWeight: 600 }}>
-                    {r.status.toUpperCase()}
+
+                {t.unlocked ? (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 13,
+                      color: "#97b3c7",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <div style={{ marginTop: 4 }}>
+                      <span style={{ color: "#c9e7ff" }}>Input:</span>{" "}
+                      <code
+                        style={{
+                          background: "#091723",
+                          border: "1px solid #1e2b3f",
+                          borderRadius: 8,
+                          padding: "2px 6px",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {JSON.stringify(t.input)}
+                      </code>
+                    </div>
+                    <div style={{ marginTop: 6 }}>
+                      <span style={{ color: "#c9e7ff" }}>Expected:</span>{" "}
+                      <code
+                        style={{
+                          background: "#091723",
+                          border: "1px solid #1e2b3f",
+                          borderRadius: 8,
+                          padding: "2px 6px",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
+                        {JSON.stringify(t.expected)}
+                      </code>
+                    </div>
+
+                    {r && (r.got ?? "") !== "" && (
+                      <div style={{ marginTop: 6 }}>
+                        <span style={{ color: "#c9e7ff" }}>Got:</span>{" "}
+                        <code
+                          style={{
+                            background: "#091723",
+                            border: "1px solid #1e2b3f",
+                            borderRadius: 8,
+                            padding: "2px 6px",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {JSON.stringify(r.got)}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 13,
+                      color: "#97b3c7",
+                      opacity: 0.85,
+                    }}
+                  >
+                    Hidden input and expected output.
                   </div>
                 )}
+              </div>
+
+              <div
+                style={{
+                  minWidth: 80,
+                  textAlign: "right",
+                  fontWeight: 700,
+                  color: rightTextColor,
+                  letterSpacing: 0.25,
+                  alignSelf: "start",
+                }}
+              >
+                {status.toUpperCase()}
               </div>
             </li>
           );

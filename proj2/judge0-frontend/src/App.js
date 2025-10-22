@@ -743,24 +743,82 @@ async function runAllTests() {
           }}
         >
           <Output output={output} error={error} time={time} memory={memory} />
+          {/* Buttons directly under Output */}
+          <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+            <button
+              onClick={runCode}
+              style={{
+                // WHITE BUTTON
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid #dfe7ef",
+                background: "#ffffff",
+                color: "#022026",
+                fontWeight: 600,
+                cursor: "pointer",
+                boxShadow: "0 2px 10px rgba(255,255,255,0.05)",
+              }}
+            >
+              Run (stdin)
+            </button>
+
+            <button
+              onClick={runAllTests}
+              disabled={isRunningTests || !selectedProblem?.testcases?.length}
+              style={{
+                // GREEN BUTTON
+                padding: "10px 14px",
+                borderRadius: 10,
+                border: "1px solid #00b377",
+                background: isRunningTests
+                  ? "#0b3a2b"
+                  : "linear-gradient(90deg, #00d084, #00ff99)",
+                color: "#022026",
+                fontWeight: 800,
+                letterSpacing: 0.2,
+                cursor:
+                  isRunningTests || !selectedProblem?.testcases?.length
+                    ? "not-allowed"
+                    : "pointer",
+                opacity: isRunningTests || !selectedProblem?.testcases?.length ? 0.6 : 1,
+                boxShadow: isRunningTests
+                  ? "none"
+                  : "0 6px 20px rgba(0,255,153,0.18)",
+                transition: "transform 120ms ease",
+              }}
+              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              {isRunningTests ? "Running Tests…" : "Run Tests"}
+            </button>
+          </div>
+
+          {/* Tests list card */}
+          {selectedProblem?.testcases?.length ? (
+            <>
+            {selectedProblem?.testcases?.some((t) => t.unlocked) && (
+              <div
+                style={{
+                  marginTop: 14,
+                  color: "#97b3c7",
+                  fontSize: 12,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                Public Tests
+              </div>
+            )}
+            <TestList
+              tests={selectedProblem.testcases}
+              results={testResults}
+              running={isRunningTests}
+            />
+            </>
+          ) : null}
         </div>
       </div>
     </div>
-      
-    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-      <button onClick={runCode}>Run (stdin)</button>
-      <button onClick={runAllTests} disabled={isRunningTests || !selectedProblem?.testcases?.length}>
-        {isRunningTests ? "Running Tests…" : "Run Tests"}
-      </button>
-    </div>
-
-    {selectedProblem?.testcases?.length ? (
-      <TestList
-        tests={selectedProblem.testcases}
-        results={testResults}
-        running={isRunningTests}
-      />
-    ) : null}
     
     {/* Success Modal */}
       <Modal
