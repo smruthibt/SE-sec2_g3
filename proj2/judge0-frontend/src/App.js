@@ -3,6 +3,7 @@ import axios from "axios";
 import CodeEditor from "./Editor";
 import Output from "./Output";
 import problems from "./data/problems.json";
+import TestList from "./components/TestList"
 
 const JUDGE0_API = "http://104.236.56.159:2358";
 
@@ -89,7 +90,7 @@ function Modal({ open, onClose, title, children }) {
 function App() {
   const [language, setLanguage] = useState("python");
   const [selectedProblem, setSelectedProblem] = useState(problems[0]);
-  const [sourceCode, setSourceCode] = useState("print('Hello, Judge0!')  #Replace with your solution!");
+  const [sourceCode, setSourceCode] = useState("print('Hello, Judge0!')  #Replace with your solution!");  // Always overwritten with the sourcecode for the respective problem
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
@@ -100,6 +101,8 @@ function App() {
   const [solvedProblems, setSolvedProblems] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMsg, setModalMsg] = useState("");
+  const [testResults, setTestResults] = React.useState({}); // { testId: {status, got, expected} }
+  const [isRunningTests, setIsRunningTests] = React.useState(false);
 
   const groupedProblems = useMemo(() => {
     const groups = { easy: [], medium: [], hard: [] };
@@ -114,11 +117,105 @@ function App() {
       setOutput("");
       setError("");
       setReward("");
+      setTestResults({});
+      setIsRunningTests(false);
     } else {
       setSourceCode("// Template not available for this problem/language");
     }
   }, [language, selectedProblem]);
 
+  function normalize(s = "") {
+    return String(s)
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .map(line => line.trimEnd())
+      .join("\n")
+      .trim();
+  }
+
+  function compareOutputs(got, expected) {
+    return normalize(got) === normalize(expected);
+  }
+
+  async function runOneTest({ input, expected, id }) {
+  try {
+    const payload = {
+      language_id: languageMap[language],
+      source_code: sourceCode,
+      stdin: input
+    };
+
+    const res = await axios.post(
+      `${JUDGE0_API}/submissions/?base64_encoded=false&wait=true`,
+      payload
+    );
+
+    const data = res.data;
+    const stdout = data.stdout ?? "";
+    const stderr = data.stderr ?? "";
+    const compile = data.compile_output ?? "";
+    const statusId = data?.status?.id;
+
+    // If compile/runtime error, mark error
+    if (compile || stderr) {
+      return {
+        id,
+        status: "error",
+        got: (compile || stderr || stdout || "").toString(),
+        expected
+      };
+    }
+
+    const ok = statusId === 3; // 3: Accepted
+    const passed = ok && compareOutputs(stdout, expected);
+
+    return {
+      id,
+      status: passed ? "pass" : "fail",
+      got: stdout,
+      expected
+    };
+  } catch (e) {
+    return {
+      id,
+      status: "error",
+      got: "Network/Server error contacting Judge0.",
+      expected
+    };
+  }
+}
+
+async function runAllTests() {
+  if (!selectedProblem?.testcases?.length) return;
+
+  setIsRunningTests(true);
+  setTestResults(prev => {
+    // mark all as pending first
+    const init = {};
+    for (const t of selectedProblem.testcases) init[t.id] = { status: "pending" };
+    return init;
+  });
+
+  const results = {};
+  for (const t of selectedProblem.testcases) {
+    const r = await runOneTest(t);
+    results[t.id] = r;
+    setTestResults(curr => ({ ...curr, [t.id]: r }));
+  }
+
+  setIsRunningTests(false);
+
+  // (Optional) reward logic: only reward if ALL tests pass
+  const allPass = Object.values(results).every(r => r.status === "pass");
+  if (allPass) {
+    const r = rewardMap[selectedProblem?.difficulty || "easy"];
+    setReward(`🏆 All tests passed! ${r.coupon} — +${r.points} pts`);
+    setModalMsg(`All test cases passed for “${selectedProblem.title}”.\nReward: ${r.coupon}\n+${r.points} points`);
+    setModalOpen(true);
+  } else{
+    setReward("");
+  }
+}
   // === Run code ===
   const runCode = async () => {
     setOutput("");
@@ -150,19 +247,19 @@ function App() {
       setMemory(data.memory ?? "");
 
       // === Reward logic ===
-      if (stdout && !stderr) {
-        if (!solvedProblems.includes(selectedProblem.id)) {
-          const r = rewardMap[selectedProblem.difficulty];
-          setSolvedProblems((prev) => [...prev, selectedProblem.id]);
-          setUserScore((prev) => prev + r.points);
-          const msg = `Well done! You solved “${selectedProblem.title}”.\nReward: ${r.coupon}\n+${r.points} points`;
-          setReward(`🏆 ${r.coupon} — +${r.points} pts`);
-          setModalMsg(msg);
-          setModalOpen(true);
-        } else {
-          setReward("✅ Already solved earlier — nice consistency!");
-        }
-      }
+      // if (stdout && !stderr) {
+      //   if (!solvedProblems.includes(selectedProblem.id)) {
+      //     const r = rewardMap[selectedProblem.difficulty];
+      //     setSolvedProblems((prev) => [...prev, selectedProblem.id]);
+      //     setUserScore((prev) => prev + r.points);
+      //     const msg = `Well done! You solved “${selectedProblem.title}”.\nReward: ${r.coupon}\n+${r.points} points`;
+      //     setReward(`🏆 ${r.coupon} — +${r.points} pts`);
+      //     setModalMsg(msg);
+      //     setModalOpen(true);
+      //   } else {
+      //     setReward("✅ Already solved earlier — nice consistency!");
+      //   }
+      // }
     } catch (err) {
       console.error(err);
       setError("❌ Error connecting to Judge0 API.");
@@ -649,7 +746,22 @@ function App() {
         </div>
       </div>
     </div>
+      
+    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+      <button onClick={runCode}>Run (stdin)</button>
+      <button onClick={runAllTests} disabled={isRunningTests || !selectedProblem?.testcases?.length}>
+        {isRunningTests ? "Running Tests…" : "Run Tests"}
+      </button>
+    </div>
 
+    {selectedProblem?.testcases?.length ? (
+      <TestList
+        tests={selectedProblem.testcases}
+        results={testResults}
+        running={isRunningTests}
+      />
+    ) : null}
+    
     {/* Success Modal */}
       <Modal
         open={modalOpen}
