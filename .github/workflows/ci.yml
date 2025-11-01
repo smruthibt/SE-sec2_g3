@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: proj2/judge0-frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Run frontend Jest tests
         run: npm run test:ci
