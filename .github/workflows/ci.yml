@@ -5,6 +5,42 @@ on:
   pull_request:
 
 jobs:
+# ------------------- FRONTEND TESTS -------------------
+  frontend-tests:
+    name: Run React (Jest) tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proj2/judge0-frontend
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: proj2/judge0-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend Jest tests
+        run: npm run test:ci
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-${{ matrix.node-version }}
+          path: proj2/judge0-frontend/coverage
+# ------------------- JUDGE0 API TESTS -------------------
   tests:
     runs-on: ubuntu-latest
 
