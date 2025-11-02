@@ -660,7 +660,7 @@ function App() {
                 htmlFor="stdin"
                 style={{ fontWeight: 600, fontSize: 13, color: colors.subtext }}
               >
-                💾 Input (optional)
+                💾 Input
               </label>
               <textarea
                 id="stdin"
