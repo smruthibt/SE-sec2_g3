@@ -25,7 +25,8 @@
     <script src="/js/app.js"></script>
     <script>
       async function loadOrders() {
-        const res = await fetch('/api/orders');
+        const res = await fetch('/api/orders', {credentials: 'include'});
+
         const orders = await res.json();
         const wrap = document.getElementById('orders');
         if (!Array.isArray(orders) || orders.length === 0) {

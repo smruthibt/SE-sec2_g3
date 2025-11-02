@@ -6,7 +6,8 @@ const restaurantSchema = new mongoose.Schema({
   imageUrl: { type: String },
   rating: { type: Number, default: 4.5 },
   deliveryFee: { type: Number, default: 0 },
-  etaMins: { type: Number, default: 30 }
+  etaMins: { type: Number, default: 30 },
+  address: { type: String, required: true }
 }, { timestamps: true });
 
 export default mongoose.model('Restaurant', restaurantSchema);

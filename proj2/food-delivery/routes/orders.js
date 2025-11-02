@@ -9,7 +9,14 @@ const router = express.Router();
 // GET /api/orders (list user's orders)
 router.get('/', async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.userId }).sort({ createdAt: -1 });
+    console.log("Session:", req.session);   // 👀 debug
+    const userId = req.session.customerId;  // ✅ pull from session
+    console.log("Fetching orders for:", userId);
+
+    if (!userId) return res.status(401).json({ message: 'Not logged in' });
+
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    console.log("Found orders:", orders.length);
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -19,6 +26,10 @@ router.get('/', async (req, res) => {
 router.post('/', async(req, res) => {
   console.log("🔥 inside POST /api/orders handler");
   try {
+    const customerId = req.session.customerId;  // ✅ use session ID
+    if (!customerId) {
+      return res.status(401).send('Customer not logged in');
+    }
     const cartItems = await CartItem.find({ userId: req.userId }).lean();
     if (cartItems.length === 0) return res.status(400).json({ error: 'Cart is empty' });
 
@@ -53,7 +64,7 @@ router.post('/', async(req, res) => {
     const total = subtotal + deliveryFee;
 
     const order = await Order.create({
-      userId: req.userId,
+      userId:  customerId,
       restaurantId,
       items,
       subtotal,

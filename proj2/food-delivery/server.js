@@ -14,7 +14,7 @@ import cartRouter from './routes/cart.js';
 import orderRouter from './routes/orders.js';
 import customerAuthRouter from './routes/customerAuth.js';
 import restaurantDashboardRouter from './routes/restaurantDashboard.js';
-
+import driverDashboardRoutes from './routes/driverDashboard.js';
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,11 +44,11 @@ mongoose.connect(MONGODB_URI)
 }
 
 // Simple demo user middleware (no auth): attaches a demo userId
-app.use((req, res, next) => {
-  // In production you'd implement real auth. For this demo we fix a userId string.
-  req.userId = 'demo-user-1';
-  next();
-});
+// app.use((req, res, next) => {
+//   // In production you'd implement real auth. For this demo we fix a userId string.
+//   req.userId = 'demo-user-1';
+//   next();
+// });
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 app.use(session({
@@ -75,6 +75,8 @@ app.use('/api/restaurant-auth', restaurantAuthRouter);
 app.use("/driver", driverRoutes);
 app.use('/api/customer-auth', customerAuthRouter);
 app.use('/api/restaurant-dashboard', restaurantDashboardRouter);
+
+app.use('/driver', driverDashboardRoutes);
 
 
 // 404 handler for API

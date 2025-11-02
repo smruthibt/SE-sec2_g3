@@ -42,7 +42,8 @@ router.post("/login", async (req, res) => {
     req.session.driverName = auth.driverId.fullName;
 
     // Redirect to welcome page (session will store name)
-    res.redirect("/driver/welcome");
+    res.redirect("/driver-dashboard.html");
+
   } catch (err) {
     console.error("Driver Registration Error:", err);
     res.status(500).send("Error logging in driver: " + err.message);

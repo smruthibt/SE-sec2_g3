@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Driver Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+  <div class="container">
+    <h2>Welcome, Driver!</h2>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="myTab">
+      <li class="nav-item"><a class="nav-link active" id="new-tab" data-bs-toggle="tab" href="#new">New Orders</a></li>
+      <li class="nav-item"><a class="nav-link" id="pending-tab" data-bs-toggle="tab" href="#pending">Pending Deliveries</a></li>
+      <li class="nav-item"><a class="nav-link" id="payments-tab" data-bs-toggle="tab" href="#payments">Payments</a></li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-3">
+      <!-- New Orders -->
+      <div id="new" class="tab-pane fade show active">
+        <div id="newOrders" class="mt-3"></div>
+      </div>
+
+      <!-- Pending Deliveries -->
+      <div id="pending" class="tab-pane fade">
+        <div id="pendingOrders" class="mt-3"></div>
+      </div>
+
+      <!-- Payments -->
+      <div id="payments" class="tab-pane fade">
+        <form id="dateForm" class="row g-3 mb-3">
+          <div class="col-auto">
+            <input type="date" id="startDate" class="form-control">
+          </div>
+          <div class="col-auto">
+            <input type="date" id="endDate" class="form-control">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary">View</button>
+          </div>
+        </form>
+        <div id="paymentsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle (required for tab events) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+  window.addEventListener("DOMContentLoaded", () => {
+
+    // === Load New Orders ===
+    async function loadNewOrders() {
+      const res = await fetch('/driver/orders/new', { credentials: 'include' });
+      const orders = await res.json();
+      const div = document.getElementById('newOrders');
+      div.innerHTML = orders.length
+        ? orders.map(o => `
+          <div class="card mb-2 p-3">
+            <p><b>Pickup (Restaurant):</b> ${o.restaurantLocation}</p>
+            <p><b>Delivery (Customer):</b> ${o.customerLocation}</p>
+            <p><b>Money:</b> $${o.deliveryPayment}</p>
+            <button class="btn btn-success" onclick="acceptOrder('${o._id}')">Accept</button>
+          </div>`
+        ).join('')
+        : `<p class="text-muted">No new orders available.</p>`;
+    }
+
+    // === Accept Order ===
+    window.acceptOrder = async function(id) {
+      await fetch('/driver/orders/accept/' + id, { 
+        method: 'POST', 
+        credentials: 'include' 
+      });
+      loadNewOrders();
+      loadPending(); // refresh pending immediately
+    }
+
+    // === Load Pending Deliveries ===
+    async function loadPending() {
+      const res = await fetch('/driver/orders/pending', { credentials: 'include' });
+      const orders = await res.json();
+      
+      const div = document.getElementById('pendingOrders');
+      div.innerHTML = orders.length
+        ? orders.map(o => `
+          <div class="card mb-2 p-3">
+            <p><b>Pickup (Restaurant):</b> ${o.restaurantLocation || 'Restaurant address unavailable'}</p>
+            <p><b>Delivery (Customer):</b> ${o.customerLocation || o.deliveryLocation || 'Customer address unavailable'}</p>
+            <button class="btn btn-primary" onclick="markDelivered('${o._id}')">Mark Delivered</button>
+          </div>`
+        ).join('')
+        : `<p class="text-muted">No pending deliveries.</p>`;
+    }
+
+    // === Mark Delivered ===
+    window.markDelivered = async function(id) {
+      await fetch('/driver/orders/delivered/' + id, { 
+        method: 'POST', 
+        credentials: 'include' 
+      });
+      loadPending();
+      loadNewOrders(); // refresh new orders again after one is delivered
+    }
+
+    // === Payments Section ===
+    document.getElementById('dateForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      const res = await fetch(`/driver/payments?start=${start}&end=${end}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      const div = document.getElementById('paymentsList');
+      div.innerHTML = data.payments.length
+        ? `<h5>Total: $${data.total}</h5>` +
+          data.payments.map(p => `
+            <p>${new Date(p.updatedAt).toLocaleString()}: $${p.deliveryPayment}</p>
+          `).join('')
+        : `<p class="text-muted">No payments found for this range.</p>`;
+    });
+
+    // === Refresh New Orders Tab when Activated ===
+    const newTab = document.getElementById('new-tab');
+    newTab.addEventListener('shown.bs.tab', () => {
+      console.log("🆕 New Orders tab activated — refreshing...");
+      loadNewOrders();
+    });
+
+    // === Refresh Pending Tab when Activated ===
+    const pendingTab = document.getElementById('pending-tab');
+    pendingTab.addEventListener('shown.bs.tab', () => {
+      console.log("📦 Pending tab activated — loading pending orders...");
+      loadPending();
+    });
+
+    // Fallback: trigger on direct clicks (if user double-clicks fast)
+    newTab.addEventListener('click', loadNewOrders);
+    pendingTab.addEventListener('click', loadPending);
+
+    // === Initial Load ===
+    loadNewOrders();
+    loadPending();
+
+  });
+</script>
+
+</body>
+</html>

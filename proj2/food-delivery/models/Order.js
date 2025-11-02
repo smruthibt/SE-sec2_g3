@@ -8,11 +8,14 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const orderSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'CustomerAuth', required: true, index: true },
   restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true },
+  driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', default: null },
   items: [orderItemSchema],
   subtotal: Number,
   deliveryFee: Number,
+  deliveryLocation: String,
+  deliveryPayment: Number,  
   total: Number,
   status: { type: String, enum: ['placed', 'preparing', 'out_for_delivery', 'delivered'], default: 'placed' }
 }, { timestamps: true });
