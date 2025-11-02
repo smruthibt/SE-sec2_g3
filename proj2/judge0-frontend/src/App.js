@@ -20,10 +20,18 @@ function useInjectFonts() {
   }, []);
 }
 
+// Generate a random alphanumeric coupon code
+function generateCouponCode(prefix = "FOOD") {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return `${prefix}-${code}`;
+}
+
 const rewardMap = {
-  easy: { coupon: "🍩 Free Donut Coupon", points: 10 },
-  medium: { coupon: "🍕 10% Pizza Coupon", points: 25 },
-  hard: { coupon: "🍔 20% Burger Coupon", points: 50 },
+  easy: { symbol: "🍩", cashback: "$5 Cashback", prefix: "EASY" },
+  medium: { symbol: "🍕", cashback: "$10 Cashback", prefix: "MEDIUM" },
+  hard: { symbol: "🍔", cashback: "$20 Cashback", prefix: "HARD" },
 };
 
 const languageMap = { python: 71, cpp: 54, java: 62, javascript: 63 };
@@ -138,84 +146,94 @@ function App() {
   }
 
   async function runOneTest({ input, expected, id }) {
-  try {
-    const payload = {
-      language_id: languageMap[language],
-      source_code: sourceCode,
-      stdin: input
-    };
+    try {
+      const payload = {
+        language_id: languageMap[language],
+        source_code: sourceCode,
+        stdin: input
+      };
 
-    const res = await axios.post(
-      `${JUDGE0_API}/submissions/?base64_encoded=false&wait=true`,
-      payload
-    );
+      const res = await axios.post(
+        `${JUDGE0_API}/submissions/?base64_encoded=false&wait=true`,
+        payload
+      );
 
-    const data = res.data;
-    const stdout = data.stdout ?? "";
-    const stderr = data.stderr ?? "";
-    const compile = data.compile_output ?? "";
-    const statusId = data?.status?.id;
+      const data = res.data;
+      const stdout = (data.stdout ?? "").trim();
+      const stderr = (data.stderr ?? "").trim();
+      const compile = (data.compile_output ?? "").trim();
+      const statusId = data?.status?.id;
 
-    // If compile/runtime error, mark error
-    if (compile || stderr) {
+      const got = stdout || stderr || compile || "No output";
+
+      // If compile/runtime error, mark error
+      if (compile || stderr) {
+        return {
+          id,
+          status: "error",
+          got,
+          expected
+        };
+      }
+
+      const ok = statusId === 3; // 3: Accepted
+      const passed = ok && compareOutputs(stdout, expected);
+
+      return {
+        id,
+        status: passed ? "pass" : "fail",
+        got,
+        expected
+      };
+    } catch (e) {
       return {
         id,
         status: "error",
-        got: (compile || stderr || stdout || "").toString(),
+        got: "Network/Server error contacting Judge0.",
         expected
       };
     }
-
-    const ok = statusId === 3; // 3: Accepted
-    const passed = ok && compareOutputs(stdout, expected);
-
-    return {
-      id,
-      status: passed ? "pass" : "fail",
-      got: stdout,
-      expected
-    };
-  } catch (e) {
-    return {
-      id,
-      status: "error",
-      got: "Network/Server error contacting Judge0.",
-      expected
-    };
-  }
-}
-
-async function runAllTests() {
-  if (!selectedProblem?.testcases?.length) return;
-
-  setIsRunningTests(true);
-  setTestResults(prev => {
-    // mark all as pending first
-    const init = {};
-    for (const t of selectedProblem.testcases) init[t.id] = { status: "pending" };
-    return init;
-  });
-
-  const results = {};
-  for (const t of selectedProblem.testcases) {
-    const r = await runOneTest(t);
-    results[t.id] = r;
-    setTestResults(curr => ({ ...curr, [t.id]: r }));
   }
 
-  setIsRunningTests(false);
+  async function runAllTests() {
+    if (!selectedProblem?.testcases?.length) return;
 
-  // (Optional) reward logic: only reward if ALL tests pass
-  const allPass = Object.values(results).every(r => r.status === "pass");
-  if (allPass) {
-    const r = rewardMap[selectedProblem?.difficulty || "easy"];
-    setReward(`🏆 All tests passed! ${r.coupon} — +${r.points} pts`);
-    setModalMsg(`All test cases passed for “${selectedProblem.title}”.\nReward: ${r.coupon}\n+${r.points} points`);
-    setModalOpen(true);
-  } else{
-    setReward("");
+    setIsRunningTests(true);
+    setTestResults(prev => {
+      const init = {};
+      for (const t of selectedProblem.testcases) init[t.id] = { status: "pending" };
+      return init;
+    });
+
+    const results = {};
+    for (const t of selectedProblem.testcases) {
+      const r = await runOneTest(t);
+      results[t.id] = r;
+      setTestResults(curr => ({ ...curr, [t.id]: r }));
+    }
+
+    setIsRunningTests(false);
+
+    const allPass = Object.values(results).every(r => r.status === "pass");
+    if (allPass) {
+      const diff = selectedProblem?.difficulty || "easy";
+      const r = rewardMap[diff];
+      const couponCode = generateCouponCode(r.prefix);
+
+      setReward(`🎉 ${r.cashback} Unlocked!`);
+      setModalMsg(
+        `All test cases passed for “${selectedProblem.title}”.\n\n` +
+        `💰 You’ve unlocked a ${r.cashback}!\n` +
+        `💳 Coupon Code: ${couponCode}\n\n` +
+        `Apply this on your next order to claim your cashback.`
+      );
+      setModalOpen(true);
+    } else {
+      setReward("");
+    }
+
   }
-}
+
   // === Run code ===
   const runCode = async () => {
     setOutput("");
@@ -246,20 +264,6 @@ async function runAllTests() {
       setTime(data.time ?? "");
       setMemory(data.memory ?? "");
 
-      // === Reward logic ===
-      // if (stdout && !stderr) {
-      //   if (!solvedProblems.includes(selectedProblem.id)) {
-      //     const r = rewardMap[selectedProblem.difficulty];
-      //     setSolvedProblems((prev) => [...prev, selectedProblem.id]);
-      //     setUserScore((prev) => prev + r.points);
-      //     const msg = `Well done! You solved “${selectedProblem.title}”.\nReward: ${r.coupon}\n+${r.points} points`;
-      //     setReward(`🏆 ${r.coupon} — +${r.points} pts`);
-      //     setModalMsg(msg);
-      //     setModalOpen(true);
-      //   } else {
-      //     setReward("✅ Already solved earlier — nice consistency!");
-      //   }
-      // }
     } catch (err) {
       console.error(err);
       setError("❌ Error connecting to Judge0 API.");
@@ -280,547 +284,491 @@ async function runAllTests() {
 
   return (
     <div
-    style={{
-      background: colors.bg,
-      color: colors.text,
-      minHeight: "100vh",
-      fontFamily: "Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-      padding: "24px",
-      display: "flex",
-      flexDirection: "column",
-    }}
-  >
-    {/* === Header === */}
-    <header
       style={{
-        textAlign: "center",
-        marginBottom: "18"
+        background: colors.bg,
+        color: colors.text,
+        minHeight: "100vh",
+        fontFamily: "Poppins, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <h1
+
+      {/* === Header === */}
+      <header
         style={{
-          fontSize: "2.2rem",
-          fontWeight: 800,
-          letterSpacing: 0.3,
-          color: "#dff7ff",
-          textShadow: "0 10px 40px rgba(0,224,255,0.25)"
+          textAlign: "center",
+          marginBottom: 30,
+          paddingBottom: 10,
+          borderBottom: "1px solid rgba(0,255,179,0.15)"
         }}
       >
-        ⚙️ GrabCode – <span style={{ color: colors.accent }}>Solve</span> &{" "}
-          <span style={{ color: colors.accent2 }}>Earn</span>
-      </h1>
-      <p style={{ color: colors.subtext, marginTop: 6 }}>
-        Practice like a pro. Clean UI, sharp feedback, tasty rewards 🍕
-      </p>
-    </header>
+        <h1
+          style={{
+            fontSize: "2.8rem",
+            fontWeight: 900,
+            background: "linear-gradient(90deg, #00e0ff 0%, #00ffb3 50%, #00e0ff 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            letterSpacing: 0.5,
+            textShadow: "0 0 20px rgba(0,255,179,0.35)",
+            animation: "glowPulse 3s infinite ease-in-out",
+            fontFamily: "'Poppins', 'Segoe UI', system-ui, sans-serif",
+          }}
+        >
+          🚀 BiteCode <span style={{ color: "#ffffff" }}>Arena</span>
+        </h1>
 
-    {/* === Top Bar: Score + Reward Table Toggle === */}
+        <p
+          style={{
+            color: "#a6c9da",
+            fontSize: 15,
+            marginTop: 8,
+            fontFamily: "Poppins, system-ui, sans-serif",
+            letterSpacing: 0.3,
+          }}
+        >
+          Write. Run. Earn. ⚡ Challenge your limits with real-time coding tests and rewards!
+        </p>
+      </header>
+
+      {/* === Adding CSS animation inline for the header === */}
+      <style>
+        {`
+    @keyframes glowPulse {
+      0% { text-shadow: 0 0 10px rgba(0,255,179,0.4), 0 0 20px rgba(0,255,179,0.2); }
+      50% { text-shadow: 0 0 25px rgba(0,255,179,0.6), 0 0 40px rgba(0,224,255,0.4); }
+      100% { text-shadow: 0 0 10px rgba(0,255,179,0.4), 0 0 20px rgba(0,255,179,0.2); }
+    }
+  `}
+      </style>
+
+
+      {/* === Main Section === */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 12,
-          marginBottom: 16
+          gridTemplateColumns: "minmax(360px, 420px) 1fr",
+          gap: 22,
+          alignItems: "start",
         }}
       >
+        {/* === LEFT COLUMN === */}
         <div
           style={{
-            textAlign: "center",
-            background: colors.card,
-            padding: "12px 16px",
-            borderRadius: 14,
-            border: `1px solid ${colors.border}`,
-            boxShadow: "0 6px 24px rgba(0,0,0,0.35)"
+            display: "flex",
+            flexDirection: "column",
+            gap: 18,
           }}
         >
-          <b>⭐ Score:</b>{" "}
-          <span style={{ color: colors.accent2, fontWeight: 700 }}>
-            {userScore}
-          </span>{" "}
-          pts
-        </div>
-      </div>
-
-    {/* === Main Section === */}
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(280px, 420px) 1fr",
-        gap: 22,
-        alignItems: "start",
-      }}
-    >
-      {/* === Problem Panel === */}
-      <div
-        style={{
-          background: colors.card,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 16,
-          padding: 18,
-          boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
-        }}
-      >
-        <h2 
-          style={{ 
-            color: colors.accent, 
-            marginBottom: 12,
-            fontSize: 18,
-            fontWeight: 700
-          }}
-        >
-          📜 Problems
-        </h2>
-
-        {/* Problem Dropdown */}
-          <label
-            htmlFor="problem-select"
-            style={{ fontWeight: 600, fontSize: 13, color: colors.subtext }}
-          >
-            Choose a problem
-          </label>
-          <select
-            id="problem-select"
-            value={selectedProblem?.id ?? ""}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const p = problems.find((x) => x.id === id);
-              if (p) setSelectedProblem(p);
-            }}
-            style={{
-              width: "100%",
-              marginTop: 6,
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "#0a1520",
-              color: "#e9f6ff",
-              border: `1px solid ${colors.accent}55`,
-              outline: "none",
-              cursor: "pointer"
-            }}
-          >
-            {["easy", "medium", "hard"].map((diff) => (
-              <optgroup
-                key={diff}
-                label={
-                  diff === "easy"
-                    ? "Easy 🍀"
-                    : diff === "medium"
-                    ? "Medium 🚀"
-                    : "Hard 🧠"
-                }
-              >
-                {groupedProblems[diff].map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                    {solvedProblems.includes(p.id) ? "  ✅" : ""}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-
-          {/* Quick list with badges */}
+          {/* === Problem Panel === */}
           <div
             style={{
-              marginTop: 16,
-              display: "grid",
-              gap: 10,
-              maxHeight: "44vh",
-              overflowY: "auto"
+              background: colors.card,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 16,
+              padding: 18,
+              boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
             }}
           >
-            {problems.map((p) => (
-              <div
-                key={p.id}
-                onClick={() => setSelectedProblem(p)}
-                title={`Open: ${p.title}`}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  border:
-                    selectedProblem.id === p.id
-                      ? `1px solid ${colors.accent}`
-                      : `1px solid ${colors.border}`,
-                  background:
-                    selectedProblem.id === p.id
-                      ? "#0c2130"
-                      : solvedProblems.includes(p.id)
-                      ? "#0d291f"
-                      : "#091723",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  transition: "transform 120ms ease",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{p.title}</span>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color:
-                        p.difficulty === "easy"
-                          ? colors.accent2
-                          : p.difficulty === "medium"
-                          ? "#ffd24d"
-                          : "#ff7d7d"
-                    }}
-                  >
-                    {p.difficulty.toUpperCase()}
-                  </span>
-                </div>
-                {solvedProblems.includes(p.id) && (
-                  <span style={{ color: colors.solved, fontSize: 18 }}>✔</span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Selected Problem Details */}
-          <div
-            style={{
-              background: "#08131c",
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 16,
-              border: `1px solid ${colors.border}`
-            }}
-          >
-            <h3
+            <h2
               style={{
                 color: colors.accent,
-                margin: 0,
+                marginBottom: 12,
                 fontSize: 18,
                 fontWeight: 700
               }}
             >
-              {selectedProblem.title}
-            </h3>
-            <p style={{ color: colors.text, opacity: 0.9, marginTop: 8 }}>
-              {selectedProblem.description}
-            </p>
-            <p style={{ marginTop: 8 }}>
-              <b>Difficulty:</b>{" "}
-              <span
+              📜 Choose Difficulty
+            </h2>
+
+            {/* Difficulty Dropdown */}
+            <select
+              onChange={(e) => {
+                const diff = e.target.value;
+                if (diff) {
+                  const pool = groupedProblems[diff];
+                  const random = pool[Math.floor(Math.random() * pool.length)];
+                  setSelectedProblem(random);
+                }
+              }}
+              defaultValue=""
+              style={{
+                width: "100%",
+                marginTop: 6,
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "#0a1520",
+                color: "#e9f6ff",
+                border: `1px solid ${colors.accent}55`,
+                outline: "none",
+                cursor: "pointer",
+                fontWeight: 600
+              }}
+            >
+              <option value="" disabled>
+                Select Difficulty
+              </option>
+              <option value="easy">Easy 🍀</option>
+              <option value="medium">Medium 🚀</option>
+              <option value="hard">Hard 🧠</option>
+            </select>
+
+            {/* Selected Problem Display */}
+            {selectedProblem && (
+              <div
                 style={{
-                  color:
-                    selectedProblem.difficulty === "easy"
-                      ? colors.accent2
-                      : selectedProblem.difficulty === "medium"
-                      ? "#ffd24d"
-                      : "#ff7d7d",
-                  fontWeight: 700
+                  background: "#08131c",
+                  borderRadius: 12,
+                  padding: 14,
+                  marginTop: 16,
+                  border: `1px solid ${colors.border}`
                 }}
               >
-                {selectedProblem.difficulty.toUpperCase()}
-              </span>
-            </p>
+                <h3 style={{ color: colors.accent, margin: 0, fontSize: 18, fontWeight: 700 }}>
+                  {selectedProblem.title}
+                </h3>
+
+                <p style={{ color: colors.text, opacity: 0.9, marginTop: 8 }}>
+                  {selectedProblem.description}
+                </p>
+
+                {selectedProblem.explanation && (
+                  <>
+                    <h4 style={{ marginTop: 12, color: colors.accent2 }}>🧠 Explanation</h4>
+                    <p style={{ color: colors.text, opacity: 0.9 }}>
+                      {selectedProblem.explanation}
+                    </p>
+                  </>
+                )}
+
+                {selectedProblem.sample_input && (
+                  <>
+                    <h4 style={{ marginTop: 12, color: colors.accent2 }}>💾 Sample Input</h4>
+                    <pre
+                      style={{
+                        background: "#0a1520",
+                        padding: 10,
+                        borderRadius: 8,
+                        color: "#e5f1ff",
+                        fontFamily: "Roboto Mono, monospace",
+                        overflowX: "auto"
+                      }}
+                    >
+                      {selectedProblem.sample_input}
+                    </pre>
+                  </>
+                )}
+
+                {selectedProblem.sample_output && (
+                  <>
+                    <h4 style={{ marginTop: 12, color: colors.accent2 }}>📤 Sample Output</h4>
+                    <pre
+                      style={{
+                        background: "#0a1520",
+                        padding: 10,
+                        borderRadius: 8,
+                        color: "#aaf0c0",
+                        fontFamily: "Roboto Mono, monospace",
+                        overflowX: "auto"
+                      }}
+                    >
+                      {selectedProblem.sample_output}
+                    </pre>
+                  </>
+                )}
+
+                {selectedProblem.constraints && (
+                  <>
+                    <h4 style={{ marginTop: 12, color: colors.accent2 }}>⚙️ Constraints</h4>
+                    <p style={{ color: colors.text }}>{selectedProblem.constraints}</p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Reward table */}
+          {/* === Rewards Table === */}
           <div
             style={{
-              background: "#08131c",
-              borderRadius: 12,
-              padding: 14,
-              marginTop: 16,
-              border: `1px solid ${colors.border}`
+              background: colors.card,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 16,
+              padding: 18,
+              boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
             }}
           >
-            <h4 style={{ margin: 0, marginBottom: 10, color: colors.accent }}>
-              🎁 Rewards by Difficulty
-            </h4>
-            <div style={{ overflowX: "auto" }}>
-              <table
+            {/* 🎯 Mystery Cashback Challenge */}
+            <div
+              style={{
+                background: "#0a1520",
+                borderRadius: 12,
+                padding: 18,
+                marginTop: 20,
+                border: "1px solid #00ffb366",
+                textAlign: "center",
+                boxShadow: "0 0 20px rgba(0,255,179,0.1)",
+              }}
+            >
+              <h4 style={{ color: colors.accent2, marginBottom: 8, fontSize: 18 }}>
+                🎯 Mystery Cashback Challenge
+              </h4>
+              <p style={{ color: "#a6c9da", fontSize: 14, marginBottom: 6 }}>
+                Solve a{" "}
+                <span style={{ color: colors.accent }}>
+                  {selectedProblem?.difficulty?.toUpperCase() || "???"}
+                </span>{" "}
+                challenge to unlock:
+              </p>
+
+              <h3
                 style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0
+                  color: "#00ffb3",
+                  margin: "8px 0",
+                  fontSize: 20,
+                  textShadow: "0 0 10px rgba(0,255,179,0.3)",
                 }}
               >
-                <thead>
-                  <tr style={{ background: "#0b1a27" }}>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: `1px solid ${colors.border}`
-                      }}
-                    >
-                      Difficulty
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: `1px solid ${colors.border}`
-                      }}
-                    >
-                      Coupon
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px 12px",
-                        borderBottom: `1px solid ${colors.border}`
-                      }}
-                    >
-                      Points
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(rewardMap).map(([diff, val]) => (
-                    <tr key={diff}>
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${colors.border}` }}>
-                        {diff === "easy"
-                          ? "Easy 🍀"
-                          : diff === "medium"
-                          ? "Medium 🚀"
-                          : "Hard 🧠"}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${colors.border}` }}>
-                        {val.coupon}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: `1px solid ${colors.border}` }}>
-                        {val.points}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                {rewardMap[selectedProblem?.difficulty || "easy"].cashback}
+              </h3>
+
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "#85a3b3",
+                  fontStyle: "italic",
+                  marginTop: 6,
+                }}
+              >
+                (Coupon revealed only after all tests pass)
+              </p>
             </div>
           </div>
         </div>
 
-      {/* === Code Panel === */}
-      <div
-        style={{
-          background: colors.card,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 16,
-          padding: 18,
-          boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
-        }}
-      >
-        {/* Language and Run Bar */}
+
+        {/* === RIGHT COLUMN === */}
         <div
           style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginBottom: 12
+            background: colors.card,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 16,
+            padding: 18,
+            boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label
-              htmlFor="language"
-              style={{ fontWeight: 700, fontSize: 13, color: colors.subtext }}
-            >
-            🧩 Language:
-          </label>
-          <select
-            id="language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            style={{
-              background: "#0a1520",
-              color: "#e9f6ff",
-              padding: "8px 10px",
-              borderRadius: 10,
-              border: `1px solid ${colors.accent}55`,
-              outline: "none",
-              cursor: "pointer"
-            }}
-          >
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="java">Java</option>
-            <option value="javascript">JavaScript (Node)</option>
-          </select>
-        </div>
 
-        <button
-              onClick={runCode}
-              style={{
-                marginLeft: "auto",
-                padding: "10px 18px",
-                background:
-                  "linear-gradient(90deg, #00e0ff 0%, #00ffb3 50%, #00e0ff 100%)",
-                border: "none",
-                color: "#002228",
-                fontWeight: 900,
-                letterSpacing: 0.3,
-                cursor: "pointer",
-                borderRadius: 12,
-                transition: "transform 120ms ease, box-shadow 120ms ease",
-                boxShadow: "0 10px 20px rgba(0, 255, 179, 0.25)"
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-              onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-              title="Run code on Judge0"
-            >
-              ▶ Run Code
-            </button>
-          </div>
-
-
-        {/* Code Editor */}
-        <div
-          style={{
-            borderRadius: "10px",
-            overflow: "hidden",
-            marginBottom: "10px",
-          }}
-        >
-          <CodeEditor
-            language={language}
-            value={sourceCode}
-            onChange={setSourceCode}
-            style={{
-                fontFamily: "Roboto Mono, ui-monospace, SFMono-Regular, Menlo, monospace",
-                fontSize: 14
-            }}
-          />
-        </div>
-
-        {/* Input */}
-        <div style={{ marginTop: 12 }}>
-          <label
-            htmlFor="stdin"
-            style={{ fontWeight: 600, fontSize: 13, color: colors.subtext }}
-          >
-            💾 Input (optional)
-          </label>
-            <textarea
-              id="stdin"
-              placeholder="Provide custom input for your program…"
-              rows="3"
-              style={{
-              width: "100%",
-              marginTop: 6,
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: `1px solid ${colors.accent}33`,
-              background: "#0a1520",
-              color: "#e9f6ff",
-              outline: "none"
-            }}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        </div>
-
-        {/* Reward */}
-        {reward && (
+          {/* === Code Panel === */}
           <div
             style={{
-              marginTop: 16,
-              background: "linear-gradient(90deg, rgba(0,255,179,0.1), rgba(0,224,255,0.1))",
-              padding: 14,
-              borderRadius: 12,
-              fontWeight: 700,
-              boxShadow: "0 0 0 1px rgba(0,255,179,0.25) inset",
-              textAlign: "center"
+              background: colors.card,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 16,
+              padding: 18,
+              boxShadow: "0 12px 36px rgba(0,0,0,0.45)"
             }}
           >
-            {reward}
-          </div>
-        )}
-
-        {/* Output */}
-        <div
-          style={{
-            background: "#07121a",
-            color: "#e0f7fa",
-            borderRadius: 12,
-            padding: 10,
-            marginTop: 16,
-            border: `1px solid ${colors.accent}22`,
-            minHeight: 120
-          }}
-        >
-          <Output output={output} error={error} time={time} memory={memory} />
-          {/* Buttons directly under Output */}
-          <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-            <button
-              onClick={runCode}
+            {/* Language and Run Bar */}
+            <div
               style={{
-                // WHITE BUTTON
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #dfe7ef",
-                background: "#ffffff",
-                color: "#022026",
-                fontWeight: 600,
-                cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(255,255,255,0.05)",
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap",
+                marginBottom: 12
               }}
             >
-              Run (stdin)
-            </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label
+                  htmlFor="language"
+                  style={{ fontWeight: 700, fontSize: 13, color: colors.subtext }}
+                >
+                  🧩 Language:
+                </label>
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  style={{
+                    background: "#0a1520",
+                    color: "#e9f6ff",
+                    padding: "8px 10px",
+                    borderRadius: 10,
+                    border: `1px solid ${colors.accent}55`,
+                    outline: "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  <option value="python">Python</option>
+                  <option value="cpp">C++</option>
+                  <option value="java">Java</option>
+                  <option value="javascript">JavaScript (Node)</option>
+                </select>
+              </div>
 
-            <button
-              onClick={runAllTests}
-              disabled={isRunningTests || !selectedProblem?.testcases?.length}
+              <button
+                onClick={runCode}
+                style={{
+                  marginLeft: "auto",
+                  padding: "10px 18px",
+                  background:
+                    "linear-gradient(90deg, #00e0ff 0%, #00ffb3 50%, #00e0ff 100%)",
+                  border: "none",
+                  color: "#002228",
+                  fontWeight: 900,
+                  letterSpacing: 0.3,
+                  cursor: "pointer",
+                  borderRadius: 12,
+                  transition: "transform 120ms ease, box-shadow 120ms ease",
+                  boxShadow: "0 10px 20px rgba(0, 255, 179, 0.25)"
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                title="Run code on Judge0"
+              >
+                ▶ Run Code
+              </button>
+            </div>
+
+
+            {/* Code Editor */}
+            <div
               style={{
-                // GREEN BUTTON
-                padding: "10px 14px",
-                borderRadius: 10,
-                border: "1px solid #00b377",
-                background: isRunningTests
-                  ? "#0b3a2b"
-                  : "linear-gradient(90deg, #00d084, #00ff99)",
-                color: "#022026",
-                fontWeight: 800,
-                letterSpacing: 0.2,
-                cursor:
-                  isRunningTests || !selectedProblem?.testcases?.length
-                    ? "not-allowed"
-                    : "pointer",
-                opacity: isRunningTests || !selectedProblem?.testcases?.length ? 0.6 : 1,
-                boxShadow: isRunningTests
-                  ? "none"
-                  : "0 6px 20px rgba(0,255,153,0.18)",
-                transition: "transform 120ms ease",
+                borderRadius: "10px",
+                overflow: "hidden",
+                marginBottom: "10px",
               }}
-              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              {isRunningTests ? "Running Tests…" : "Run Tests"}
-            </button>
-          </div>
+              <CodeEditor
+                language={language}
+                value={sourceCode}
+                onChange={setSourceCode}
+                style={{
+                  fontFamily: "Roboto Mono, ui-monospace, SFMono-Regular, Menlo, monospace",
+                  fontSize: 14
+                }}
+              />
+            </div>
 
-          {/* Tests list card */}
-          {selectedProblem?.testcases?.length ? (
-            <>
-            {selectedProblem?.testcases?.some((t) => t.unlocked) && (
+            {/* Input */}
+            <div style={{ marginTop: 12 }}>
+              <label
+                htmlFor="stdin"
+                style={{ fontWeight: 600, fontSize: 13, color: colors.subtext }}
+              >
+                💾 Input (optional)
+              </label>
+              <textarea
+                id="stdin"
+                placeholder="Provide custom input for your program…"
+                rows="3"
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: `1px solid ${colors.accent}33`,
+                  background: "#0a1520",
+                  color: "#e9f6ff",
+                  outline: "none"
+                }}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+            </div>
+
+            {/* Reward */}
+            {reward && (
               <div
                 style={{
-                  marginTop: 14,
-                  color: "#97b3c7",
-                  fontSize: 12,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  marginTop: 16,
+                  background: "linear-gradient(90deg, rgba(0,255,179,0.1), rgba(0,224,255,0.1))",
+                  padding: 14,
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  boxShadow: "0 0 0 1px rgba(0,255,179,0.25) inset",
+                  textAlign: "center"
                 }}
               >
-                Public Tests
+                {reward}
               </div>
             )}
-            <TestList
-              tests={selectedProblem.testcases}
-              results={testResults}
-              running={isRunningTests}
-            />
-            </>
-          ) : null}
+
+            {/* Output */}
+            <div
+              style={{
+                background: "#07121a",
+                color: "#e0f7fa",
+                borderRadius: 12,
+                padding: 10,
+                marginTop: 16,
+                border: `1px solid ${colors.accent}22`,
+                minHeight: 120
+              }}
+            >
+              <Output output={output} error={error} time={time} memory={memory} />
+              {/* Buttons directly under Output */}
+              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                <button
+                  onClick={runAllTests}
+                  disabled={isRunningTests || !selectedProblem?.testcases?.length}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #00b377",
+                    background: isRunningTests
+                      ? "#0b3a2b"
+                      : "linear-gradient(90deg, #00d084, #00ff99)",
+                    color: "#022026",
+                    fontWeight: 800,
+                    letterSpacing: 0.2,
+                    cursor:
+                      isRunningTests || !selectedProblem?.testcases?.length
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity: isRunningTests || !selectedProblem?.testcases?.length ? 0.6 : 1,
+                    boxShadow: isRunningTests
+                      ? "none"
+                      : "0 6px 20px rgba(0,255,153,0.18)",
+                    transition: "transform 120ms ease",
+                  }}
+                  onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                  onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  {isRunningTests ? "Running Tests…" : "Run Tests"}
+                </button>
+              </div>
+
+              {/* Tests list */}
+              {selectedProblem?.testcases?.length ? (
+                <>
+                  {selectedProblem?.testcases?.some((t) => t.unlocked) && (
+                    <div
+                      style={{
+                        marginTop: 14,
+                        color: "#97b3c7",
+                        fontSize: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      Public Tests
+                    </div>
+                  )}
+                  <TestList
+                    tests={selectedProblem.testcases}
+                    results={testResults}
+                    running={isRunningTests}
+                  />
+                </>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    {/* Success Modal */}
+
+      {/* Success Modal */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -836,7 +784,7 @@ async function runAllTests() {
           {modalMsg}
         </pre>
       </Modal>
-    </div>
+    </div >
   );
 }
 
