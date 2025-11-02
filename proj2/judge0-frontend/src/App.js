@@ -784,6 +784,21 @@ function App() {
           {modalMsg}
         </pre>
       </Modal>
+      {/* === Footer === */}
+      <footer
+        style={{
+          textAlign: "center",
+          marginTop: "40px",
+          paddingTop: "20px",
+          borderTop: "1px solid rgba(0,255,179,0.15)",
+          color: "#7aa5b7",
+          fontSize: "13px",
+          fontFamily: "Poppins, system-ui, sans-serif",
+          opacity: 0.85,
+        }}
+      >
+        © {new Date().getFullYear()} BiteCode Arena. All rights reserved.
+      </footer>
     </div >
   );
 }
