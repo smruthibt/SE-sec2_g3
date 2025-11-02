@@ -347,7 +347,6 @@ function App() {
   `}
       </style>
 
-
       {/* === Main Section === */}
       <div
         style={{
