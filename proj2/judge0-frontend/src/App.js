@@ -167,7 +167,7 @@ function App() {
       const statusId = data?.status?.id ?? 0;
 
       // Handle possible undefined values more gracefully
-      let got = "";
+      let got = stdout;
       if (!got) {
         if (stderr) got = stderr;
         else if (compile) got = compile;
@@ -180,12 +180,12 @@ function App() {
         return { id, status: "error", got, expected };
       }
 
-      const passed = compareOutputs(stdout || got, expected);
+      const passed = compareOutputs(got, expected);
 
       return {
         id,
         status: passed ? "pass" : "fail",
-        got: passed ? expected : got, // preventing "undefined" in UI for any of the tests
+        got,
         expected
       };
     } catch (e) {
