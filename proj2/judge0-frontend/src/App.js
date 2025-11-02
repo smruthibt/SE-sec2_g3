@@ -609,31 +609,7 @@ function App() {
                   <option value="javascript">JavaScript (Node)</option>
                 </select>
               </div>
-
-              <button
-                onClick={runCode}
-                style={{
-                  marginLeft: "auto",
-                  padding: "10px 18px",
-                  background:
-                    "linear-gradient(90deg, #00e0ff 0%, #00ffb3 50%, #00e0ff 100%)",
-                  border: "none",
-                  color: "#002228",
-                  fontWeight: 900,
-                  letterSpacing: 0.3,
-                  cursor: "pointer",
-                  borderRadius: 12,
-                  transition: "transform 120ms ease, box-shadow 120ms ease",
-                  boxShadow: "0 10px 20px rgba(0, 255, 179, 0.25)"
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-                title="Run code on Judge0"
-              >
-                ▶ Run Code
-              </button>
             </div>
-
 
             {/* Code Editor */}
             <div
@@ -712,32 +688,75 @@ function App() {
             >
               <Output output={output} error={error} time={time} memory={memory} />
               {/* Buttons directly under Output */}
-              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  gap: 16,
+                  marginTop: 16,
+                }}
+              >
+                <button
+                  onClick={runCode}
+                  style={{
+                    width: 130,
+                    textAlign: "center",
+                    padding: "10px 18px",
+                    background: "#00e0ff",
+                    border: "1px solid #00bfff",
+                    color: "#002228",
+                    fontWeight: 900,
+                    letterSpacing: 0.3,
+                    cursor: "pointer",
+                    borderRadius: 10,
+                    transition: "all 120ms ease",
+                    boxShadow: "0 0 20px rgba(0, 224, 155, 0.4)"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 0 25px rgba(0, 224, 255, 0.6)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 0 20px rgba(0, 224, 255, 0.4)";
+                  }}
+                  title="Run code on Judge0"
+                >
+                  Run Code
+                </button>
+
                 <button
                   onClick={runAllTests}
                   disabled={isRunningTests || !selectedProblem?.testcases?.length}
                   style={{
-                    padding: "10px 14px",
+                    width: 130,
+                    textAlign: "center",
+                    padding: "10px 18px",
                     borderRadius: 10,
-                    border: "1px solid #00b377",
-                    background: isRunningTests
-                      ? "#0b3a2b"
-                      : "linear-gradient(90deg, #00d084, #00ff99)",
-                    color: "#022026",
-                    fontWeight: 800,
-                    letterSpacing: 0.2,
+                    border: "1px solid #00d084",
+                    background: "#00ff99",
+                    color: "#002228",
+                    fontWeight: 900,
+                    letterSpacing: 0.3,
                     cursor:
                       isRunningTests || !selectedProblem?.testcases?.length
                         ? "not-allowed"
                         : "pointer",
                     opacity: isRunningTests || !selectedProblem?.testcases?.length ? 0.6 : 1,
-                    boxShadow: isRunningTests
-                      ? "none"
-                      : "0 6px 20px rgba(0,255,153,0.18)",
+                    boxShadow: "0 0 20px rgba(0, 255, 153, 0.4)",
                     transition: "transform 120ms ease",
                   }}
-                  onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-                  onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  onMouseOver={(e) => {
+                    if (isRunningTests || !selectedProblem?.testcases?.length) return;
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 0 25px rgba(0, 255, 153, 0.6)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 0 20px rgba(0, 255, 153, 0.4)";
+                  }}
                 >
                   {isRunningTests ? "Running Tests…" : "Run Tests"}
                 </button>
