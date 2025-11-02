@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import CodeEditor from '../Editor';
 
-// 👇 Inline mock guarantees the testid exists
+// Inline mock guarantees the testid exists
 jest.mock('@monaco-editor/react', () => (props) => (
   <textarea
     data-testid="monaco-editor"

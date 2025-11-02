@@ -7,8 +7,13 @@ const tests = [
 ];
 
 test('renders header and rows with statuses', () => {
-  render(<TestList tests={tests} results={{ 1: 'pass', 2: 'fail' }} running={false} />);
-
+  render(
+  <TestList
+    tests={tests}
+    results={{ 1: { status: 'pass' }, 2: { status: 'fail' } }}
+    running={false}
+  />
+);
   // Header
   expect(screen.getByText('Test Cases')).toBeInTheDocument();
 
@@ -26,6 +31,12 @@ test('renders header and rows with statuses', () => {
 });
 
 test('shows Running… badge when running', () => {
-  render(<TestList tests={tests} results={{}} running={true} />);
+  render(
+  <TestList
+    tests={tests}
+    results={{}}
+    running={true}
+  />
+);
   expect(screen.getByText(/Running…/)).toBeInTheDocument();
 });

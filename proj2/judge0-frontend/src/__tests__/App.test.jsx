@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-// ✅ Mock axios BEFORE importing App, so Jest never parses axios' ESM entry.
+// Mock axios BEFORE importing App, so Jest never parses axios' ESM entry.
 jest.mock('axios', () => ({
   __esModule: true,
   default: { get: jest.fn(), post: jest.fn() },
