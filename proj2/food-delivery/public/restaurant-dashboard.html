@@ -1,103 +1,345 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Restaurant Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Dashboard • bitecode</title>
+
+  <!-- Bootstrap + Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;600&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.0), rgba(255, 255, 255, 0.25)),
+        url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=2400&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      margin: 0;
+      color: #0e0e0e;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 0;
+    }
+
+    .navbar {
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      font-weight: 600;
+    }
+
+    main.wrap {
+      position: relative;
+      z-index: 1;
+      padding: 40px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1100px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .section-title {
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 12px;
+      padding: 0.9rem 0.95rem;
+    }
+
+    .btn-black {
+      background: #0e0e0e;
+      color: #fff;
+      border-radius: 999px;
+      border: none;
+    }
+
+    .btn-black:hover {
+      background: #1a1a1a;
+    }
+
+    .drop {
+      border: 2px dashed #cfe9d5;
+      background: #eef6ee;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .drop.dragover {
+      background: #ddf0dd;
+      border-color: #9cd09f;
+    }
+
+    .thumb img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #16a34a;
+      font-weight: 600;
+    }
+  </style>
 </head>
-<body class="bg-light">
-  <div class="container py-4">
-    <h2 id="welcome" class="mb-4"></h2>
 
-    <h4>📋 Your Menu Items</h4>
-    <div class="mb-3">
-      <input id="itemName" class="form-control mb-2" placeholder="Name">
-      <input id="itemDesc" class="form-control mb-2" placeholder="Description">
-      <input id="itemPrice" class="form-control mb-2" type="number" placeholder="Price">
-      <input id="itemImage" class="form-control mb-2" placeholder="Image URL">
-      <button id="addItem" class="btn btn-success w-100">Add Item</button>
+<body>
+  <nav class="navbar navbar-expand px-3">
+    <a class="navbar-brand" href="/"><span style="color:#16a34a;">bite</span>code</a>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <span id="welcomePill" class="badge bg-light text-dark">Loading…</span>
+      <a id="authButton" href="#" class="btn btn-outline-secondary btn-sm">Sign out</a>
     </div>
+  </nav>
 
-    <ul id="menuList" class="list-group mb-5"></ul>
+  <main class="wrap">
+    <div class="card">
+      <ul class="nav nav-tabs px-4 pt-3" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard"
+            type="button">Dashboard</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile"
+            type="button">Profile</button></li>
+      </ul>
 
-    <h4>Incoming Orders</h4>
-    <div id="orderList"></div>
-  </div>
+      <div class="tab-content p-4">
+        <!-- DASHBOARD -->
+        <div class="tab-pane fade show active" id="dashboard">
+          <h4 class="section-title">📋 Your Menu</h4>
+          <div class="row g-2 mb-3">
+            <div class="col-md-3"><input id="itemName" class="form-control" placeholder="Name"></div>
+            <div class="col-md-3"><input id="itemDesc" class="form-control" placeholder="Description"></div>
+            <div class="col-md-2"><input id="itemPrice" type="number" min="0" step="0.01" class="form-control"
+                placeholder="Price"></div>
+            <div class="col-md-4">
+              <div id="drop-dish" class="drop">
+                <small>Attach dish photo (JPG/PNG)</small><br>
+                <input id="file-dish" type="file" accept="image/jpeg,image/png" hidden>
+                <button class="btn btn-outline-success btn-sm mt-1" id="btn-dish">Choose file</button>
+              </div>
+              <div id="thumbs-dish" class="thumb mt-1"></div>
+            </div>
+          </div>
+          <button id="addItem" class="btn btn-black w-100 mb-4">Add Menu Item</button>
+          <ul id="menuList" class="list-group mb-4"></ul>
+
+          <h4 class="section-title">🧾 Incoming Orders</h4>
+          <div id="orderList"></div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="tab-pane fade" id="profile">
+          <h4 class="section-title">🏪 Restaurant Profile</h4>
+          <p class="text-muted mb-2">Upload restaurant cover or logo.</p>
+          <div id="drop-restaurant" class="drop mb-2">
+            <p class="mb-2">Drag & drop photo here, or click to select</p>
+            <input id="file-restaurant" type="file" accept="image/jpeg,image/png" hidden>
+            <button class="btn btn-outline-success btn-sm" id="btn-restaurant">Choose file</button>
+          </div>
+          <div id="thumbs-restaurant" class="thumb mt-2"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    async function loadDashboard() {
-      const res = await fetch('/api/restaurant-dashboard/data');
+    const API_BASE = location.origin + "/api";
+    let uploadedDishURL = "";
+
+    const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
+
+    // ✅ Add welcome name
+    function setWelcome(name) {
+      document.getElementById("welcomePill").textContent = `Welcome, ${name}`;
+    }
+
+    // ✅ Improved thumbnail handler
+    function addThumb(container, url) {
+      container.innerHTML = "";
+      const wrap = document.createElement("div");
+      wrap.className = "thumb";
+      const img = document.createElement("img");
+      img.src = new URL(url, location.origin).href;
+      img.onerror = () => {
+        img.alt = "Image not previewable (unsupported format)";
+        img.style.height = "60px";
+      };
+      wrap.append(img);
+      container.appendChild(wrap);
+    }
+
+    async function uploadFiles(kind, files, thumbsContainer) {
+      if (!files.length) return;
+      const fd = new FormData();
+      files.forEach(f => fd.append("photos", f));
+      fd.append("kind", kind);
+
+      const res = await fetch(`${API_BASE}/restaurant-dashboard/upload`, {
+        method: "POST",
+        body: fd,
+        credentials: "include" // ✅ ensure session is passed
+      });
+
       const data = await res.json();
-      if (!res.ok) return alert(data.error || 'Not logged in');
-      document.getElementById('welcome').textContent = `Welcome, ${data.restaurantName}`;
-      renderMenu(data.menuItems);
-      renderOrders(data.orders);
+
+      if (res.ok && data.urls && data.urls.length) {
+        const imgURL = new URL(data.urls[0], location.origin).href;
+        addThumb(thumbsContainer, imgURL);
+
+        if (kind === "dish") {
+          uploadedDishURL = data.urls[0];
+        }
+
+        if (kind === "restaurant") {
+          await saveRestaurantPhoto(data.urls[0]);
+        }
+
+        // ✅ stop false alert
+        return;
+      }
+
+      console.error("❌ Upload failed:", data);
+      alert("Upload failed");
+    }
+
+
+    async function saveRestaurantPhoto(url) {
+      const res = await fetch(`${API_BASE}/restaurant-dashboard/photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ imageUrl: url })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Restaurant photo saved!");
+      } else {
+        alert("Failed to save photo: " + data.error);
+      }
+    }
+
+    // Dish image
+    const dishInput = document.getElementById("file-dish");
+    const dishThumbs = document.getElementById("thumbs-dish");
+    document.getElementById("btn-dish").addEventListener("click", () => dishInput.click());
+    dishInput.addEventListener("change", () => uploadFiles("dish", [...dishInput.files], dishThumbs));
+
+    // Restaurant image
+    const restInput = document.getElementById("file-restaurant");
+    const restThumbs = document.getElementById("thumbs-restaurant");
+    document.getElementById("btn-restaurant").addEventListener("click", () => restInput.click());
+    restInput.addEventListener("change", () => uploadFiles("restaurant", [...restInput.files], restThumbs));
+
+    document.getElementById("addItem").addEventListener("click", async () => {
+      const name = document.getElementById("itemName").value.trim();
+      const description = document.getElementById("itemDesc").value.trim();
+      const price = parseFloat(document.getElementById("itemPrice").value);
+      if (!name || isNaN(price)) { alert("Name and price required"); return; }
+
+      await fetch(`${API_BASE}/restaurant-dashboard/menu`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, description, price, imageUrl: uploadedDishURL })
+      });
+
+      uploadedDishURL = "";
+      dishThumbs.innerHTML = "";
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemDesc").value = "";
+      document.getElementById("itemPrice").value = "";
+      loadDashboard();
+    });
+
+    async function loadDashboard() {
+      const res = await fetch(`${API_BASE}/restaurant-dashboard/data`, {
+        credentials: "include"
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.ok) {
+        if (data.restaurantImageUrl) {
+          addThumb(document.getElementById("thumbs-restaurant"), data.restaurantImageUrl);
+        }
+        setWelcome(data.restaurantName || "Restaurant");
+        updateAuthButton(true);
+        renderMenu(data.menuItems || []);
+      } else {
+        console.warn("⚠️ Dashboard data error:", data);
+        document.getElementById("welcomePill").textContent = "Not logged in";
+        updateAuthButton(false);
+      }
+    }
+
+
+
+    //Update login/logout button dynamically
+    function updateAuthButton(isLoggedIn) {
+      const btn = document.getElementById("authButton");
+      if (isLoggedIn) {
+        btn.textContent = "Sign out";
+        btn.href = "#";
+        btn.onclick = async () => {
+          await fetch(`${API_BASE}/restaurant-auth/logout`, {
+            method: "POST",
+            credentials: "include"
+          });
+          location.reload();
+        };
+      } else {
+        btn.textContent = "Sign in";
+        btn.href = "/restaurant-login.html";
+        btn.onclick = null;
+      }
     }
 
     function renderMenu(items) {
-      const list = document.getElementById('menuList');
-      list.innerHTML = '';
+      const list = document.getElementById("menuList");
+      list.innerHTML = "";
       items.forEach(i => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        const li = el("li", "list-group-item d-flex justify-content-between align-items-center");
         li.innerHTML = `
-          <div><strong>${i.name}</strong> - $${i.price}<br><small>${i.description}</small></div>
+          <div>
+            <strong>${i.name}</strong> - $${i.price.toFixed(2)}<br>
+            <small>${i.description || ""}</small>
+            ${i.imageUrl ? `<div><img src="${new URL(i.imageUrl, location.origin)}" height="50" style="border-radius:8px;margin-top:6px;"></div>` : ""}
+          </div>
           <button class="btn btn-sm btn-danger" onclick="deleteItem('${i._id}')">Delete</button>`;
         list.appendChild(li);
       });
     }
 
     async function deleteItem(id) {
-      await fetch('/api/restaurant-dashboard/menu/' + id, { method: 'DELETE' });
-      loadDashboard();
-    }
-
-    document.getElementById('addItem').addEventListener('click', async () => {
-      const name = document.getElementById('itemName').value.trim();
-      const description = document.getElementById('itemDesc').value.trim();
-      const price = parseFloat(document.getElementById('itemPrice').value);
-      const imageUrl = document.getElementById('itemImage').value.trim();
-      const res = await fetch('/api/restaurant-dashboard/menu', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, price, imageUrl })
-      });
-      if (res.ok) loadDashboard();
-    });
-
-    function renderOrders(orders) {
-      const container = document.getElementById('orderList');
-      container.innerHTML = '';
-      orders.forEach(o => {
-        const div = document.createElement('div');
-        div.className = 'card mb-3';
-        div.innerHTML = `
-          <div class="card-body">
-            <h5>Order #${o._id.slice(-5)}</h5>
-            <p>Status: <strong>${o.status}</strong></p>
-            <div>
-              <select id="status-${o._id}" class="form-select mb-2">
-                ${["Accepted", "Preparing", "Done", "Waiting for Driver"].map(s => `<option ${o.status===s?"selected":""}>${s}</option>`).join("")}
-              </select>
-              <button class="btn btn-primary btn-sm" onclick="updateStatus('${o._id}')">Update</button>
-            </div>
-          </div>`;
-        container.appendChild(div);
-      });
-    }
-
-    async function updateStatus(id) {
-      const status = document.getElementById('status-' + id).value;
-      await fetch('/api/restaurant-dashboard/order/' + id + '/status', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+      await fetch(`${API_BASE}/restaurant-dashboard/menu/${id}`, { method: "DELETE", credentials: "include" });
       loadDashboard();
     }
 
     loadDashboard();
   </script>
 </body>
+
 </html>

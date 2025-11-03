@@ -1,33 +1,119 @@
 import express from "express";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import MenuItem from "../models/MenuItem.js";
 import Order from "../models/Order.js";
+import Restaurant from "../models/Restaurant.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
-//Middleware: ensure restaurant is logged in
+
+// Middleware: ensure restaurant is logged in
 function requireRestaurant(req, res, next) {
-  if (!req.session.restaurantId)
+  if (!req.session.restaurantId) {
     return res.status(401).json({ error: "Not logged in as restaurant" });
+  }
   next();
 }
-//Fetch restaurant dashboard data
+
+// Ensure uploads directory path matches the one used in app.js
+const baseDir = path.join(process.cwd(), "uploads");
+
+// Multer setup (with 5MB limit + JPEG/PNG filtering)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const kind = (req.body.kind || "misc").toLowerCase(); // 'restaurant' | 'dish'
+    const dir = path.join(baseDir, "restaurants", kind);
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ts = Date.now();
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, `${ts}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    // broader check to handle image/x-png, etc.
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"));
+    }
+    cb(null, true);
+  },
+});
+
+// Upload Route
+router.post("/upload", requireRestaurant, upload.array("photos", 10), (req, res) => {
+  try {
+    const urls = req.files.map((f) => {
+      // Normalize path separators (Windows/macOS/Linux safe)
+      const rel = f.path.split("uploads")[1].replace(/^[\\/]/, "").replace(/\\/g, "/");
+      return `/uploads/${rel}`;
+    });
+    res.json({ ok: true, urls });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Save restaurant photo to DB
+router.post("/photo", requireRestaurant, async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) return res.status(400).json({ error: "imageUrl required" });
+
+    const restaurantId = req.session.restaurantId;
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      restaurantId,
+      { imageUrl },
+      { new: true }
+    );
+
+    if (!restaurant)
+      return res.status(404).json({ error: "Restaurant not found" });
+
+    res.json({ ok: true, message: "Restaurant photo updated", restaurant });
+  } catch (err) {
+    console.error("❌ Restaurant photo update error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Fetch dashboard data (name + menu + orders)
 router.get("/data", requireRestaurant, async (req, res) => {
   try {
     const restaurantId = req.session.restaurantId;
+
+    // ✅ load the restaurant to get its imageUrl
+    const restaurant = await Restaurant.findById(restaurantId);
 
     const menuItems = await MenuItem.find({ restaurantId });
     const orders = await Order.find({ restaurantId }).sort({ createdAt: -1 });
 
     res.json({
       ok: true,
-      restaurantName: req.session.restaurantName,
+      restaurantName: req.session.restaurantName || "Restaurant",
+      restaurantImageUrl: restaurant?.imageUrl || null,
       menuItems,
       orders,
     });
   } catch (err) {
+    console.error("❌ Dashboard data error:", err);
     res.status(500).json({ error: err.message });
   }
 });
-//Create new menu item
+
+// Create menu item
 router.post("/menu", requireRestaurant, async (req, res) => {
   try {
     const { name, description, price, imageUrl } = req.body;
@@ -46,7 +132,8 @@ router.post("/menu", requireRestaurant, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Edit menu item
+
+// Edit menu item
 router.put("/menu/:id", requireRestaurant, async (req, res) => {
   try {
     const item = await MenuItem.findOneAndUpdate(
@@ -60,7 +147,8 @@ router.put("/menu/:id", requireRestaurant, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Delete menu item
+
+// Delete menu item
 router.delete("/menu/:id", requireRestaurant, async (req, res) => {
   try {
     const deleted = await MenuItem.findOneAndDelete({
@@ -73,7 +161,8 @@ router.delete("/menu/:id", requireRestaurant, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Update order status
+
+// Update order status
 router.put("/order/:id/status", requireRestaurant, async (req, res) => {
   try {
     const { status } = req.body;
@@ -88,7 +177,8 @@ router.put("/order/:id/status", requireRestaurant, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Fetch all orders for a given restaurant
+
+// (optional) public fetch by restaurantId
 router.get("/orders", async (req, res) => {
   try {
     const { restaurantId } = req.query;
@@ -102,7 +192,8 @@ router.get("/orders", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-//Update order status
+
+// Alternate PATCH route for updates
 router.patch("/orders/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
@@ -122,4 +213,5 @@ router.patch("/orders/:id/status", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 export default router;

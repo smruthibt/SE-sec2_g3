@@ -2,10 +2,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import fs from "fs";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import session from 'express-session';
+
+// Routers
 import restaurantAuthRouter from './routes/restaurantAuth.js';
 import driverRoutes from "./routes/driverRoutes.js";
 import restaurantRouter from './routes/restaurants.js';
@@ -15,6 +18,7 @@ import orderRouter from './routes/orders.js';
 import customerAuthRouter from './routes/customerAuth.js';
 import restaurantDashboardRouter from './routes/restaurantDashboard.js';
 import driverDashboardRoutes from './routes/driverDashboard.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,10 +30,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
-app.use(session({ name:'sid', secret:process.env.SESSION_SECRET || 'dev', resave:false, saveUninitialized:false,
-  cookie:{ httpOnly:true, sameSite:'lax', secure:false } }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// -----------------------------------------------
+// Serve uploaded images from /uploads directory
+// -----------------------------------------------
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+// Make /uploads accessible publicly (for restaurant/dish photos)
+app.use("/uploads", express.static(uploadsDir));
+// -----------------------------------------------
 
 // MongoDB
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/food_delivery_app';
@@ -44,13 +57,6 @@ mongoose.connect(MONGODB_URI)
     process.exit(1);
   });
 }
-
-// Simple demo user middleware (no auth): attaches a demo userId
-// app.use((req, res, next) => {
-//   // In production you'd implement real auth. For this demo we fix a userId string.
-//   req.userId = 'demo-user-1';
-//   next();
-// });
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 app.use(session({
@@ -72,7 +78,6 @@ app.use('/api/menu', menuRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRouter);
 console.log("✅ /api/orders route registered");
-app.use('/api/restaurant-auth', restaurantAuthRouter);
 app.use('/api/restaurant-auth', restaurantAuthRouter);
 app.use("/driver", driverRoutes);
 app.use('/api/customer-auth', customerAuthRouter);
