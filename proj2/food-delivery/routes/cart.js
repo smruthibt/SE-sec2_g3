@@ -1,33 +1,42 @@
-import express from 'express';
-import CartItem from '../models/CartItem.js';
-import MenuItem from '../models/MenuItem.js';
+import express from "express";
+import CartItem from "../models/CartItem.js";
+import MenuItem from "../models/MenuItem.js";
 
 const router = express.Router();
 
-// GET /api/cart
-router.get('/', async (req, res) => {
+// ✅ GET /api/cart  → get all cart items for the logged-in customer
+router.get("/", async (req, res) => {
   try {
-    const items = await CartItem.find({ userId: req.userId }).populate('menuItemId').lean();
+    const customerId = req.session.customerId;
+    if (!customerId) return res.status(401).json({ error: "Customer not logged in" });
+
+    const items = await CartItem.find({ userId: customerId })
+      .populate("menuItemId")
+      .lean();
+
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/cart
+// ✅ POST /api/cart  → add or update a cart item
 // body: { menuItemId, restaurantId, quantity }
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
+    const customerId = req.session.customerId;
+    if (!customerId) return res.status(401).json({ error: "Customer not logged in" });
+
     const { menuItemId, restaurantId, quantity = 1 } = req.body;
-    if (!menuItemId || !restaurantId) return res.status(400).json({ error: 'menuItemId and restaurantId required' });
+    if (!menuItemId || !restaurantId)
+      return res.status(400).json({ error: "menuItemId and restaurantId required" });
 
-    // Ensure the menu item exists
-    const mi = await MenuItem.findById(menuItemId);
-    if (!mi) return res.status(404).json({ error: 'Menu item not found' });
+    const menuItem = await MenuItem.findById(menuItemId);
+    if (!menuItem) return res.status(404).json({ error: "Menu item not found" });
 
-    // Upsert cart item
+    // Upsert (insert or increment) the cart item
     const item = await CartItem.findOneAndUpdate(
-      { userId: req.userId, menuItemId, restaurantId },
+      { userId: customerId, menuItemId, restaurantId },
       { $inc: { quantity: Number(quantity) } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
@@ -38,40 +47,52 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PATCH /api/cart/:id  body: { quantity }
-router.patch('/:id', async (req, res) => {
+// ✅ PATCH /api/cart/:id  → update quantity
+router.patch("/:id", async (req, res) => {
   try {
+    const customerId = req.session.customerId;
+    if (!customerId) return res.status(401).json({ error: "Customer not logged in" });
+
     const { quantity } = req.body;
-    if (quantity == null) return res.status(400).json({ error: 'quantity required' });
+    if (quantity == null) return res.status(400).json({ error: "quantity required" });
+
     if (quantity < 1) {
-      await CartItem.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+      await CartItem.findOneAndDelete({ _id: req.params.id, userId: customerId });
       return res.json({ ok: true, deleted: true });
     }
+
     const item = await CartItem.findOneAndUpdate(
-      { _id: req.params.id, userId: req.userId },
+      { _id: req.params.id, userId: customerId },
       { $set: { quantity } },
       { new: true }
     );
+
     res.json(item);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/cart/:id
-router.delete('/:id', async (req, res) => {
+// ✅ DELETE /api/cart/:id  → remove one cart item
+router.delete("/:id", async (req, res) => {
   try {
-    await CartItem.findOneAndDelete({ _id: req.params.id, userId: req.userId });
+    const customerId = req.session.customerId;
+    if (!customerId) return res.status(401).json({ error: "Customer not logged in" });
+
+    await CartItem.findOneAndDelete({ _id: req.params.id, userId: customerId });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/cart (clear all)
-router.delete('/', async (req, res) => {
+// ✅ DELETE /api/cart  → clear all cart items for customer
+router.delete("/", async (req, res) => {
   try {
-    await CartItem.deleteMany({ userId: req.userId });
+    const customerId = req.session.customerId;
+    if (!customerId) return res.status(401).json({ error: "Customer not logged in" });
+
+    await CartItem.deleteMany({ userId: customerId });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
