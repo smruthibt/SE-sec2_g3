@@ -2,35 +2,35 @@ name: Run Jest Tests for Food Delivery
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'proj2/food-delivery/**'
   pull_request:
-    branches: [ main ]
-    paths:
-      - 'proj2/food-delivery/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: proj2/food-delivery
+        
+    strategy:
+      matrix:
+        node-version: [20.x]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{matrix.node-version}}
+          cache: npm  
+          cache-dependency-path: proj2/food-delivery/package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd proj2/food-delivery
-          npm install
+        run: npm ci || npm install
 
       - name: Run Jest tests
         env:
           NODE_ENV: test
-        run: |
-          cd proj2/food-delivery
-          node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand
+        run: npm test
