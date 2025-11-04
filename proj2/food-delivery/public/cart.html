@@ -306,9 +306,19 @@
     }
 
     // ---- Render ----
-    function renderSummary(groups) {
+    async function renderSummary(groups) {
       if (!groups.length) { summaryEl.innerHTML = ''; return; }
       const grand = groups.reduce((a, g) => a + g.subtotal, 0);
+      // 🧩 Auto-apply coupon discount on selected restaurant
+      let discount = 0;
+      if (selectedRestaurantId) {
+        const sel = groups.find(g => g.restaurantId === selectedRestaurantId);
+        if (sel) {
+          const result = await applyBestCoupon(sel.subtotal || 0);
+          discount = result.discount;
+        }
+      }
+
       const sel = selectedRestaurantId ? groups.find(g => g.restaurantId === selectedRestaurantId) : null;
 
       let disableCheckout = !sel;
@@ -333,10 +343,11 @@
         <div class="text-danger small mt-2">⚠ Some items are unavailable — please remove them before checkout.</div>
       ` : ''}
       <div class="text-secondary small mt-2">Delivery fees are per-restaurant and added at checkout.</div>
+      <div id="couponInfo" class="mt-2"></div>
     </div>`;
     }
 
-    function renderGroups(groups) {
+    async function renderGroups(groups) {
       if (!groups.length) {
         groupsEl.innerHTML = `<div class="alert alert-light text-dark shadow-sm">Your cart is empty.</div>`;
         summaryEl.innerHTML = '';
@@ -414,8 +425,42 @@
       </div>`;
       }).join('');
 
-      renderSummary(groups);
+      await renderSummary(groups);
     }
+
+    // Fetch active coupons and show best one
+    async function applyBestCoupon(subtotal) {
+      try {
+        const res = await fetch(`${API_BASE}/coupons`, { credentials: 'include' });
+        if (!res.ok) return { discount: 0, coupon: null };
+
+        const coupons = await res.json();
+        if (!Array.isArray(coupons) || coupons.length === 0) {
+          document.getElementById('couponInfo').innerHTML = "";
+          return { discount: 0, coupon: null };
+        }
+
+        // pick highest discount%
+        coupons.sort((a, b) => (b.discountPct || 0) - (a.discountPct || 0));
+        const best = coupons[0];
+        const discount = Math.round(subtotal * (best.discountPct / 100));
+
+        // show banner
+        document.getElementById('couponInfo').innerHTML = `
+      <div class="alert alert-success p-2 mb-0">
+        🎟️ <strong>${best.label}</strong> — ${best.discountPct}% off<br/>
+        <code>${best.code}</code> applied automatically
+      </div>
+    `;
+
+        return { discount, coupon: best };
+      } catch (err) {
+        console.error("Coupon fetch error:", err);
+        document.getElementById('couponInfo').innerHTML = "";
+        return { discount: 0, coupon: null };
+      }
+    }
+
 
     // ---- Actions ----
     async function updateQty(id, qty) {
@@ -450,25 +495,14 @@
         showAlert('warning', 'Selected restaurant has no items.');
         return;
       }
+
       const itemIds = group.items.map(i => String(i._id));
-      
       const qs = new URLSearchParams({ itemIds: itemIds.join(',') }).toString();
+
+
       location.href = `/payment.html?${qs}`;
-
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 201 || data?.ok) {
-        showAlert('success', `Order placed from ${group.name}!`);
-        selectedRestaurantId = null;
-        init();
-        setTimeout(() => location.href = '/orders.html', 600);
-      } else if (data.unavailableItems) {
-        showAlert('danger', `Some items are unavailable:\n${data.unavailableItems.join(', ')}`);
-        init(); // reload cart to reflect new statuses
-      } else {
-        showAlert('danger', 'Error: ' + (data.error || 'Unable to checkout'));
-      }
-
     }
+
 
     function selectRestaurant(rid) {
       selectedRestaurantId = rid;
@@ -490,7 +524,32 @@
       cachedGroups = enriched;
       renderGroups(enriched);
     }
-    init();
+
+    async function updateCartBadge() {
+      try {
+        const res = await fetch(`${API_BASE}/cart`, { credentials: 'include' });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const count =
+          Array.isArray(data)
+            ? data.length
+            : Array.isArray(data.items)
+              ? data.items.length
+              : 0;
+        if (count > 0) {
+          cartCountEl.textContent = count;
+          cartCountEl.style.display = 'inline-block';
+        } else {
+          cartCountEl.style.display = 'none';
+        }
+      } catch {
+        cartCountEl.style.display = 'none';
+      }
+    }
+
+    init().then(updateCartBadge);
+
+
   </script>
 </body>
 

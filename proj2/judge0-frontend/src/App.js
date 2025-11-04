@@ -7,6 +7,33 @@ import TestList from "./components/TestList"
 
 const JUDGE0_API = "http://104.236.56.159:2358";
 
+// Base API for your backend
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:3000/api";
+
+// Hook to verify session token from URL (?session=...)
+function useChallengeSession() {
+  const [state, setState] = React.useState({
+    loading: true, token: null, error: null, info: null
+  });
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("session");
+    if (!token) return setState({ loading: false, token: null, error: "Missing session token", info: null });
+
+    fetch(`${API_BASE}/challenges/session?token=${encodeURIComponent(token)}`, { credentials: "include" })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok) setState({ loading: false, token, error: d.error || "Invalid/expired session", info: null });
+        else setState({ loading: false, token, error: null, info: d });
+      })
+      .catch(() => setState({ loading: false, token, error: "Network error", info: null }));
+  }, []);
+
+  return state;
+}
+
+
 function useInjectFonts() {
   useEffect(() => {
     const id = "fonts-link";
@@ -21,12 +48,12 @@ function useInjectFonts() {
 }
 
 // Generate a random alphanumeric coupon code
-function generateCouponCode(prefix = "FOOD") {
+/*function generateCouponCode(prefix = "FOOD") {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
   for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   return `${prefix}-${code}`;
-}
+}*/
 
 const rewardMap = {
   easy: { symbol: "🍩", cashback: "$5 Cashback", prefix: "EASY" },
@@ -35,6 +62,25 @@ const rewardMap = {
 };
 
 const languageMap = { python: 71, cpp: 54, java: 62, javascript: 63 };
+
+// Helper to finalize challenge and request coupon from backend
+async function mintCouponAndShow(token) {
+  try {
+    const res = await fetch(`${API_BASE}/challenges/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Could not mint coupon");
+
+    // success popup (can later be replaced with modal)
+    alert(`🎉 ${data.label} — Code: ${data.code}`);
+  } catch (e) {
+    alert(e.message || "Too late — delivery completed");
+  }
+}
+
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null;
@@ -96,6 +142,25 @@ function Modal({ open, onClose, title, children }) {
 }
 
 function App() {
+  const session = useChallengeSession(); //get token + expiry
+
+  React.useEffect(() => {
+    if (!session?.info?.expiresAt) return;
+    const end = new Date(session.info.expiresAt).getTime();
+    const id = setInterval(() => {
+      if (Date.now() > end) {
+        // Session expired (e.g., driver delivered)
+        setModalMsg("⏰ Time’s up — delivery completed.");
+        setModalOpen(true);
+        clearInterval(id);
+        setTimeout(() => {
+          try { window.close(); } catch { }
+        }, 2000);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [session?.info?.expiresAt]);
+
   const [language, setLanguage] = useState("python");
   const [selectedProblem, setSelectedProblem] = useState(problems[0]);
   const [sourceCode, setSourceCode] = useState("print('Hello, Judge0!')  #Replace with your solution!");  // Always overwritten with the sourcecode for the respective problem
@@ -219,23 +284,47 @@ function App() {
 
     const allPass = Object.values(results).every(r => r.status === "pass");
     if (allPass) {
-      const diff = selectedProblem?.difficulty || "easy";
-      const r = rewardMap[diff];
-      const couponCode = generateCouponCode(r.prefix);
+      try {
+        // 🧩 Inform backend that challenge is complete
+        const res = await fetch(`${API_BASE}/challenges/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: session.token }),
+        });
+        const data = await res.json();
 
-      setReward(`🎉 ${r.cashback} Unlocked!`);
-      setModalMsg(
-        `All test cases passed for “${selectedProblem.title}”.\n\n` +
-        `💰 You’ve unlocked a ${r.cashback}!\n` +
-        `💳 Coupon Code: ${couponCode}\n\n` +
-        `Apply this on your next order to claim your cashback.`
-      );
-      setModalOpen(true);
+        if (!res.ok) {
+          const msg = data?.error || "Session expired or invalid.";
+          setModalMsg(`❌ ${msg}\n\nTime to eat — better luck next time! 🍔`);
+          setModalOpen(true);
+          setTimeout(() => {
+            try { window.close(); } catch { }
+          }, 2000);
+
+          return;
+        }
+
+        // Success: display real coupon from backend
+        setReward(`🎉 ${data.label} Unlocked!`);
+        setModalMsg(
+          `All test cases passed for “${selectedProblem.title}”.\n\n` +
+          `💰 You’ve unlocked ${data.label}.\n` +
+          `💳 Coupon Code: ${data.code}\n\n` +
+          `It’s automatically saved to your account for your next order.`
+        );
+        setModalOpen(true);
+        setTimeout(() => {
+          try { window.close(); } catch { }
+        }, 2000);
+      } catch (e) {
+        setModalMsg("Could not contact server. Please retry.");
+        setModalOpen(true);
+      }
     } else {
       setReward("");
     }
-
   }
+
 
   // === Run code ===
   const runCode = async () => {
@@ -284,6 +373,51 @@ function App() {
     subtext: "#97b3c7",
     solved: "#00ff99"
   };
+
+  // handle session states
+  // handle session states (put this right before the big return)
+  if (session.loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#0b1220",
+          color: "#e5f1ff",
+          fontSize: 18,
+          fontFamily: "Poppins, system-ui, sans-serif"
+        }}
+      >
+        ⏳ Verifying session…
+      </div>
+    );
+  }
+
+  if (session.error) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#0b1220",
+          color: "#e5f1ff",
+          fontSize: 18,
+          fontFamily: "Poppins, system-ui, sans-serif",
+          padding: 24,
+          textAlign: "center"
+        }}
+      >
+        ⚠️ {session.error}
+        <div style={{ fontSize: 14, opacity: 0.8, marginTop: 8 }}>
+          Open this page from <b>My Orders → “Try a coding challenge”</b> so it includes a session token.
+        </div>
+      </div>
+    );
+  }
+
+
 
   return (
     <div

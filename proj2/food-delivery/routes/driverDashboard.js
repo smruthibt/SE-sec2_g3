@@ -1,16 +1,18 @@
 import express from 'express';
 import Order from '../models/Order.js';
 import Driver from '../models/Driver.js';
+import ChallengeSession from "../models/ChallengeSession.js";
 const router = express.Router();
 
 
 router.get('/orders/new', async (req, res) => {
   try {
-    const orders = await Order.find({ 
-    status: { $in: ["placed", "preparing"] },
-    driverId: null})
-    .populate('restaurantId', 'name address') // pickup
-    .populate('userId', 'name address');   
+    const orders = await Order.find({
+      status: { $in: ["placed", "preparing"] },
+      driverId: null
+    })
+      .populate('restaurantId', 'name address') // pickup
+      .populate('userId', 'name address');
     const updated = orders.map(o => ({
       ...o.toObject(),
       deliveryPayment: o.deliveryPayment || 5, // default $5 per delivery
@@ -31,7 +33,7 @@ router.post('/orders/accept/:id', async (req, res) => {
     const order = await Order.findByIdAndUpdate(req.params.id, {
       driverId,
       status: 'out_for_delivery',
-      deliveryPayment: 5 
+      deliveryPayment: 5
     });
     res.json({ message: 'Order accepted', order });
   } catch (err) {
@@ -46,7 +48,7 @@ router.get('/orders/pending', async (req, res) => {
     const orders = await Order.find({ driverId, status: 'out_for_delivery' })
       .populate('restaurantId', 'name address')
       .populate('userId', 'name address');
-      const updated = orders.map(o => ({
+    const updated = orders.map(o => ({
       ...o.toObject(),
       deliveryPayment: o.deliveryPayment || 5,
       restaurantLocation: o.restaurantId?.address || 'N/A',
@@ -63,6 +65,10 @@ router.post('/orders/delivered/:id', async (req, res) => {
   try {
     const order = await Order.findByIdAndUpdate(req.params.id, { status: 'delivered' });
     res.json({ message: 'Order marked as delivered', order });
+    await ChallengeSession.updateMany(
+      { orderId: req.params.id, status: "ACTIVE" },
+      { $set: { status: "EXPIRED", expiresAt: new Date() } }
+    );
   } catch (err) {
     res.status(500).send('Error marking delivered');
   }
@@ -75,7 +81,7 @@ router.get('/payments', async (req, res) => {
     const { start, end } = req.query;
     const startDate = new Date(start);
     const endDate = new Date(end);
-    endDate.setDate(endDate.getDate() + 1); 
+    endDate.setDate(endDate.getDate() + 1);
 
     const payments = await Order.find({
       driverId,

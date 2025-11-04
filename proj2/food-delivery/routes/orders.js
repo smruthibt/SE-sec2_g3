@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import CartItem from "../models/CartItem.js";
 import Restaurant from "../models/Restaurant.js";
 import MenuItem from "../models/MenuItem.js";
+import Coupon from "../models/Coupon.js";
 
 const router = express.Router();
 
@@ -18,8 +19,20 @@ router.get("/", async (req, res) => {
       return res.status(401).json({ message: "Not logged in" });
     }
 
-    const orders = await Order.find({ userId: customerId }).sort({ createdAt: -1 });
-    res.json(orders);
+    // fetch orders sorted by creation date
+    const orders = await Order.find({ userId: customerId })
+      .populate("items.menuItemId")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // explicitly ensure challengeStatus and appliedCode fields are sent
+    const enriched = orders.map(o => ({
+      ...o,
+      challengeStatus: o.challengeStatus || "NOT_STARTED",
+      appliedCode: o.appliedCode || null,
+    }));
+
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -130,7 +143,29 @@ router.post("/", async (req, res) => {
     });
 
     const deliveryFee = Number(restaurant.deliveryFee ?? 0);
-    const total = subtotal + deliveryFee;
+
+    let discount = 0;
+    let appliedCode = null;
+    try {
+      const coupons = await Coupon.find({
+        userId: customerId,
+        applied: false,
+        expiresAt: { $gt: new Date() },
+      });
+      if (coupons.length) {
+        // pick highest discount %
+        coupons.sort((a, b) => (b.discountPct || 0) - (a.discountPct || 0));
+        const best = coupons[0];
+        discount = Math.round(subtotal * (best.discountPct / 100));
+        appliedCode = best.code;
+        best.applied = true;
+        await best.save();
+      }
+    } catch (e) {
+      console.warn("⚠️ Coupon lookup failed:", e.message);
+    }
+
+    const total = subtotal + deliveryFee - discount;
 
     // ✅ Create order document
     const order = await Order.create({
@@ -139,6 +174,8 @@ router.post("/", async (req, res) => {
       items,
       subtotal,
       deliveryFee,
+      discount,
+      appliedCode,
       total,
       status: "placed",
       paymentStatus: "paid"

@@ -8,6 +8,29 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import session from 'express-session';
 
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:4000"], credentials: true }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
+
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 2
+  }
+}));
+
 // Routers
 import restaurantAuthRouter from './routes/restaurantAuth.js';
 import driverRoutes from "./routes/driverRoutes.js";
@@ -19,19 +42,14 @@ import customerAuthRouter from './routes/customerAuth.js';
 import restaurantDashboardRouter from './routes/restaurantDashboard.js';
 import driverDashboardRoutes from './routes/driverDashboard.js';
 import paymentRouter from './routes/payments.js';
+import challengeRoutes from "./routes/challenges.js";
+import couponsRouter from "./routes/coupons.js";
+
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
-app.use(cors({ origin: true, credentials: true }));
+
 app.options('/api/orders', cors({ origin: true, credentials: true }));
 app.options('/api/orders/:id', cors({ origin: true, credentials: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -61,18 +79,6 @@ mongoose.connect(MONGODB_URI)
   });
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
-    maxAge: 1000 * 60 * 60 * 2
-  }
-}));
 
 
 // API routes
@@ -88,6 +94,8 @@ app.use('/api/restaurant-dashboard', restaurantDashboardRouter);
 
 app.use('/api/driver', driverDashboardRoutes);
 app.use('/api/payments', paymentRouter);
+app.use("/api/challenges", challengeRoutes);
+app.use("/api/coupons", couponsRouter);
 
 
 

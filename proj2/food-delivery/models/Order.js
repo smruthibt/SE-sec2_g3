@@ -27,7 +27,15 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
-  }
-}, { timestamps: true }); 
+  },
+  
+  challengeStatus: {
+    type: String,
+    enum: ["NOT_STARTED", "COMPLETED", "FAILED"],
+    default: "NOT_STARTED"
+  },
+  appliedCode: { type: String, default: null },
+
+}, { timestamps: true });
 
 export default mongoose.model('Order', orderSchema);
