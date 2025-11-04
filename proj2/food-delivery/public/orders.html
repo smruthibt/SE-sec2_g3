@@ -1,100 +1,314 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Orders</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>My Orders • bitecode</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{ --accent:#16a34a; --text:#0e0e0e; --muted:#6a6f73; --card:#fff; --radius:16px; --overlay:rgba(0,0,0,.35); }
+    html,body{height:100%}
+    body{
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text); margin:0; position:relative;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,.0), rgba(255,255,255,.25)),
+        url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=2400&auto=format&fit=crop');
+      background-size:cover; background-position:center;
+    }
+    body::before{ content:""; position:fixed; inset:0; background:var(--overlay); z-index:0; }
+    .navbar{ position:relative; z-index:3; background:rgba(255,255,255,.9)!important; backdrop-filter:blur(8px); border-bottom:1px solid rgba(0,0,0,.06)}
+    .brand{ font-weight:800; letter-spacing:.2px; color:#0e0e0e; text-decoration:none }
+    .brand .accent{ color:var(--accent) }
+    .wrap{ position:relative; z-index:2; }
+    .badge-cart{ position:absolute; top:-6px; right:-6px; background:#dc3545; }
 
-<body class="bg-light">
-  <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="/">Food<span class="text-danger">Express</span></a>
-      <div class="ms-auto">
-        <a class="btn btn-outline-primary me-2" href="/orders.html">My Orders</a>
-        <a class="btn btn-primary" href="/cart.html">Cart</a>
+    .order-card{ border:1px solid #eaeaea; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 12px 24px rgba(0,0,0,.08); }
+    .order-head{ background:#fff; border-bottom:1px solid #eee; }
+    .order-id{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .order-meta{ color:var(--muted); }
+    .status-badge{ font-weight:600; letter-spacing:.2px; }
+    .status-placed{ background:#e7f5ff; color:#1971c2; }
+    .status-ready_for_pickup, .status-preparing{ background:#fff4e6; color:#d9480f; }
+    .status-out_for_delivery{ background:#e6fcf5; color:#0b7285; }
+    .status-delivered{ background:#e6ffe9; color:#2b8a3e; }
+    .status-cancelled{ background:#ffe3e3; color:#c92a2a; }
+
+    .items-table thead th{ color:#6a6f73; font-weight:600; }
+    .money{ font-variant-numeric: tabular-nums; }
+    .summary-card{ border:1px solid #eaeaea; background:#fff; border-radius:12px; }
+
+    footer{ background:rgba(255,255,255,.9); border-top:1px solid rgba(0,0,0,.06); backdrop-filter:blur(6px); }
+    .social a{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; border:1px solid #eaeaea; color:#0e0e0e; text-decoration:none }
+    .social a:hover{ background:#f5f5f5 }
+
+    .btn-black{ background:#0e0e0e; color:#fff; border-radius:999px; }
+    .btn-black:hover{ background:#1a1a1a; color:#fff; }
+    .icon-btn{ border:none; background:transparent; padding:6px; border-radius:8px; }
+    .icon-btn:hover{ background:#f3f3f3; }
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="navbar sticky-top">
+    <div class="container py-2">
+      <a class="navbar-brand brand" href="/index.html">bite<span class="accent">code</span></a>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <a class="btn btn-outline-secondary rounded-pill" href="/orders.html">My Orders</a>
+        <a class="position-relative btn btn-outline-primary rounded-pill" href="/cart.html" id="cartLink">
+          <span class="me-1">Cart</span>
+          <span class="position-absolute translate-middle badge rounded-pill badge-cart" id="cartCount" style="display:none;">0</span>
+        </a>
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
-    <h3>My Orders</h3>
-    <div id="orders" class="mt-3"></div>
+  <main class="container py-4 wrap">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 text-white">My Orders</h1>
+      <div class="d-flex gap-2">
+        <button id="refreshBtn" class="btn btn-light btn-sm">Refresh</button>
+        <button id="clearHistoryBtn" class="btn btn-outline-danger btn-sm">Clear history</button>
+      </div>
+    </div>
+
+    <div id="ordersWrap" class="d-flex flex-column gap-3"></div>
   </main>
 
-  <script src="/js/app.js"></script>
-  <script>
-    async function loadOrders() {
-      const res = await fetch('/api/orders', { credentials: 'include' });
-      const orders = await res.json();
-      const wrap = document.getElementById('orders');
+  <!-- Confirm Modal -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="confirmTitle">Confirm delete</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="confirmBody">Are you sure you want to delete?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm" id="confirmOk">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      if (!Array.isArray(orders) || orders.length === 0) {
-        wrap.innerHTML = '<div class="alert alert-info">No orders yet.</div>';
+  <!-- FOOTER -->
+  <footer class="py-4 mt-5">
+    <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+      <div class="text-muted small">
+        © <span id="year"></span> bitecode • Fueling hungry devs
+        • <a class="text-decoration-none" href="/about.html">About</a>
+        • <a class="text-decoration-none" href="/privacy.html">Privacy</a>
+        • <a class="text-decoration-none" href="/terms.html">Terms</a>
+      </div>
+      <div class="social d-flex gap-2">
+        <a href="https://instagram.com" target="_blank" aria-label="Instagram" title="Instagram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z" stroke="#000" stroke-opacity=".7" stroke-width="1.5"/><path d="M16.5 7.5h.01M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" stroke="#000" stroke-opacity=".7" stroke-width="1.5"/></svg>
+        </a>
+        <a href="https://x.com" target="_blank" aria-label="Twitter/X" title="Twitter/X">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4l16 16M20 4 4 20" stroke="#000" stroke-opacity=".7" stroke-width="1.6"/></svg>
+        </a>
+        <a href="https://facebook.com" target="_blank" aria-label="Facebook" title="Facebook">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14 8h3V4h-3a5 5 0 0 0-5 5v3H6v4h3v8h4v-8h3l1-4h-4V9a1 1 0 0 1 1-1Z" stroke="#000" stroke-opacity=".7" stroke-width="1.5"/></svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_BASE = (window.API_BASE || (location.origin + "/api"));
+    const wrap = document.getElementById('ordersWrap');
+    const cartCountEl = document.getElementById('cartCount');
+    const yearEl = document.getElementById('year'); yearEl.textContent = new Date().getFullYear();
+
+    const confirmModalEl = document.getElementById('confirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmBody = document.getElementById('confirmBody');
+    const confirmOk = document.getElementById('confirmOk');
+    const bsModal = new bootstrap.Modal(confirmModalEl);
+
+    // State for confirm action
+    let confirmAction = null;
+
+    const money = n => `$${(Number(n)||0).toFixed(2)}`;
+    const shortId = id => String(id).slice(-6).toUpperCase();
+    const fmtDate = iso => { try { return new Date(iso).toLocaleString(); } catch { return ""; } };
+    const statusClass = s => {
+      s = String(s||"").toLowerCase();
+      if (["placed","received"].includes(s)) return "status-placed";
+      if (["preparing","ready_for_pickup"].includes(s)) return "status-ready_for_pickup";
+      if (["out_for_delivery","enroute"].includes(s)) return "status-out_for_delivery";
+      if (["delivered","completed"].includes(s)) return "status-delivered";
+      if (["cancelled","canceled"].includes(s)) return "status-cancelled";
+      return "status-placed";
+    };
+    const statusLabel = s => String(s||"placed").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
+
+    async function updateCartCount(){
+      try{
+        const res = await fetch(`${API_BASE}/cart`, { credentials:'include' });
+        if (res.ok){
+          const data = await res.json();
+          const count = Array.isArray(data) ? data.length :
+                        Array.isArray(data?.items) ? data.items.length : 0;
+          if (count>0){ cartCountEl.textContent = count; cartCountEl.style.display='inline-block'; }
+          else { cartCountEl.style.display='none'; }
+        }
+      }catch{}
+    }
+
+    async function fetchRestaurantName(rid){
+      try{
+        const res = await fetch(`${API_BASE}/restaurants/${encodeURIComponent(rid)}`, { credentials:'include' });
+        if (!res.ok) return null;
+        const r = await res.json();
+        return r?.name || null;
+      }catch{ return null; }
+    }
+
+    function orderCard(o, restaurantName){
+      const rName = restaurantName || o.restaurantName || "Restaurant";
+      const itemsRows = (o.items||[]).map(it=>`
+        <tr>
+          <td>${it.name || "Item"}</td>
+          <td class="text-center">${Number(it.quantity||1)}</td>
+          <td class="text-end money">${money(it.price)}</td>
+          <td class="text-end money">${money(Number(it.price||0)*Number(it.quantity||1))}</td>
+        </tr>`).join('');
+
+      return `
+      <div class="order-card">
+        <div class="order-head p-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fw-semibold">${rName}</div>
+              <div class="order-meta small">${fmtDate(o.createdAt)} • <span class="order-id">#${shortId(o._id)}</span></div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge status-badge ${statusClass(o.status)}">${statusLabel(o.status)}</span>
+              <button class="icon-btn" title="Delete this order" onclick="confirmDeleteOne('${o._id}')">
+                <!-- trash icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="#000" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="p-3">
+          <div class="table-responsive items-table">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr><th>Item</th><th class="text-center" style="width:80px">Qty</th><th class="text-end">Price</th><th class="text-end">Line</th></tr>
+              </thead>
+              <tbody>${itemsRows}</tbody>
+            </table>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-12 col-md-6"></div>
+            <div class="col-12 col-md-6">
+              <div class="summary-card p-3">
+                <div class="d-flex justify-content-between">
+                  <span class="text-secondary">Subtotal</span>
+                  <span class="money">${money(o.subtotal)}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                  <span class="text-secondary">Delivery</span>
+                  <span class="money">${money(o.deliveryFee)}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                  <span class="fw-semibold">Total</span>
+                  <span class="fw-bold money">${money(o.total)}</span>
+                </div>
+              </div>
+              <div class="d-flex gap-2 mt-2">
+                <a class="btn btn-outline-secondary btn-sm" href="/index.html">Order again</a>
+                <button class="btn btn-outline-primary btn-sm" onclick="copyOrderId('${o._id}')">Copy ID</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    async function loadOrders(){
+      wrap.innerHTML = `
+        <div class="order-card p-4">
+          <div class="text-secondary">Loading your orders…</div>
+        </div>`;
+      const res = await fetch(`${API_BASE}/orders`, { credentials: 'include' });
+      if (res.status === 401) { window.location.href="/customer-login.html"; return; }
+      const orders = await res.json().catch(()=>[]);
+      if (!Array.isArray(orders) || orders.length === 0){
+        wrap.innerHTML = `
+          <div class="order-card p-4">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="h5 mb-1">No orders yet</div>
+                <div class="text-secondary">Your past orders will show up here once you place one.</div>
+              </div>
+              <a class="btn btn-black btn-sm" href="/index.html">Browse restaurants</a>
+            </div>
+          </div>`;
+        updateCartCount();
         return;
       }
 
-      wrap.innerHTML = orders.map(o => {
-        const rows = o.items.map(it => `
-        <tr>
-          <td>${it.name}</td>
-          <td>${it.quantity}</td>
-          <td>$${it.price.toFixed(2)}</td>
-          <td>$${(it.price * it.quantity).toFixed(2)}</td>
-        </tr>`).join('');
-
-        // ✅ Payment badge logic
-        let paymentBadge = '';
-        if (o.paymentStatus === 'paid') {
-          paymentBadge = `<span class="badge bg-success text-uppercase">Paid</span>`;
-        } else if (o.paymentStatus === 'failed') {
-          paymentBadge = `<span class="badge bg-danger text-uppercase">Payment Failed</span>`;
-        } else {
-          paymentBadge = `<span class="badge bg-secondary text-uppercase">Pending Payment</span>`;
+      // Fill missing restaurant names
+      const cache = new Map();
+      await Promise.all(orders.map(async o=>{
+        const key = String(o.restaurantId||"");
+        if (!o.restaurantName && key && !cache.has(key)){
+          cache.set(key, await fetchRestaurantName(key));
         }
+      }));
 
-        // ✅ Regular order status badge
-        const orderBadge = `<span class="badge bg-info text-uppercase">${o.status.replaceAll('_', ' ')}</span>`;
-
-        return `
-        <div class="card mb-3 shadow-sm">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <div class="fw-semibold">Order #${o._id}</div>
-                <div class="text-secondary small">${new Date(o.createdAt).toLocaleString()}</div>
-                <div class="mt-2 d-flex flex-wrap gap-2">
-                  ${orderBadge}
-                  ${paymentBadge}
-                </div>
-              </div>
-
-              <div class="text-end">
-                <div>Subtotal: <strong>$${o.subtotal.toFixed(2)}</strong></div>
-                <div>Delivery: <strong>$${o.deliveryFee.toFixed(2)}</strong></div>
-                <div>Total: <span class="fs-5 fw-bold">$${o.total.toFixed(2)}</span></div>
-              </div>
-            </div>
-
-            <div class="table-responsive mt-3">
-              <table class="table table-sm mb-0">
-                <thead>
-                  <tr>
-                    <th>Item</th><th>Qty</th><th>Price</th><th>Line</th>
-                  </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>
-          </div>
-        </div>`;
-      }).join('');
+      wrap.innerHTML = orders.map(o => orderCard(o, cache.get(String(o.restaurantId)))).join('');
+      updateCartCount();
     }
 
+    function copyOrderId(id){
+      navigator.clipboard?.writeText(String(id)).then(()=>{},()=>{});
+    }
+
+    // ---- Delete flows ----
+    function confirmDeleteAll(){
+      confirmTitle.textContent = "Delete all orders?";
+      confirmBody.textContent = "This will permanently remove your entire order history. Proceed?";
+      confirmAction = async ()=>{
+        const res = await fetch(`${API_BASE}/orders`, { method:'DELETE', credentials:'include' });
+        if (res.ok){ bsModal.hide(); loadOrders(); } else {
+          const e = await res.json().catch(()=>({})); alert(e.error || "Failed to delete history");
+        }
+      };
+      bsModal.show();
+    }
+
+    function confirmDeleteOne(orderId){
+      confirmTitle.textContent = "Delete this order?";
+      confirmBody.textContent = "This action cannot be undone.";
+      confirmAction = async ()=>{
+        const res = await fetch(`${API_BASE}/orders/` + encodeURIComponent(orderId), { method:'DELETE', credentials:'include' });
+        if (res.ok){ bsModal.hide(); loadOrders(); } else {
+          const e = await res.json().catch(()=>({})); alert(e.error || "Failed to delete order");
+        }
+      };
+      bsModal.show();
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+    document.getElementById('clearHistoryBtn').addEventListener('click', confirmDeleteAll);
+    document.getElementById('confirmOk').addEventListener('click', ()=> confirmAction && confirmAction());
+
+    // expose per-order delete
+    window.confirmDeleteOne = confirmDeleteOne;
+
+    // init
     loadOrders();
   </script>
 </body>
-
 </html>
