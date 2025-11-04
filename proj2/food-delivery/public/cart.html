@@ -440,7 +440,7 @@
     }
 
     //Redirect to custom mock payment page instead of placing order immediately
-    function checkoutSelected() {
+    async function checkoutSelected() {
       if (!selectedRestaurantId) {
         showAlert('warning', 'Please select a restaurant to checkout.');
         return;
@@ -486,7 +486,7 @@
     // ---- Init ----
     async function init() {
       const items = await fetchCart();
-      console.log("Fetched cart items:", items);
+      // console.log("Fetched cart items:", items);
       const groups = groupByRestaurant(items);
       const enriched = await enrichGroups(groups);
       cachedGroups = enriched;

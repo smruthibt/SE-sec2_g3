@@ -64,7 +64,7 @@ router.post('/login', async (req, res) => {
       req.session.adminId = String(admin._id);
       req.session.restaurantId = String(admin.restaurantId._id);
       req.session.restaurantName = admin.restaurantId.name;
-      console.log("✅ Login session set:", req.session);
+      // console.log("✅ Login session set:", req.session);
     res.json({
       ok: true,
       message: `Welcome ${admin.restaurantId.name}!`,

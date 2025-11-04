@@ -4,38 +4,51 @@ import MenuItem from "../models/MenuItem.js";
 
 const router = express.Router();
 
-// ✅ GET /api/cart  → get all cart items for the logged-in customer
+// ✅ GET /api/cart → get all cart items for the logged-in customer
 router.get("/", async (req, res) => {
   try {
     const customerId = req.session.customerId;
     if (!customerId) return res.status(401).json({ message: "Not logged in" });
 
-    // ✅ Fetch all cart items with nested menu + restaurant data
-const cart = await CartItem.find({ userId: customerId })
-  .populate({
-    path: "menuItemId",
-    populate: { path: "restaurantId" }
-  })
-  .lean();
+    // populate menuItemId and its restaurantId
+    const cart = await CartItem.find({ userId: customerId })
+      .populate({
+        path: "menuItemId",
+        populate: { path: "restaurantId" },
+      })
+      .lean();
 
-// ✅ Decorate each cart item with availability and details
-const detailedCart = cart.map((ci) => {
+    // decorate
+    const detailedCart = cart.map(ci => {
       const item = ci.menuItemId || {};
+      const restaurant = item.restaurantId || {};
+
       return {
-        ...ci,
+        _id: ci._id,
+        quantity: ci.quantity,
         menuItemId: {
-          ...item,
+          _id: item._id,
+          name: item.name || "Unknown Item",
+          price: item.price || 0,
+          imageUrl: item.imageUrl || null,
           isAvailable: item.isAvailable ?? false,
+          restaurantId: {
+            _id: restaurant._id,
+            name: restaurant.name || "Restaurant",
+            deliveryFee: restaurant.deliveryFee ?? 0,
+            etaMins: restaurant.etaMins ?? 30,
+          },
         },
       };
     });
 
     res.json(detailedCart);
-
   } catch (err) {
+    console.error("❌ Error loading cart:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ✅ POST /api/cart  → add or update a cart item
 // body: { menuItemId, restaurantId, quantity }

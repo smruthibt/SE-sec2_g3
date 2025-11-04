@@ -100,8 +100,8 @@ router.get("/data", requireRestaurant, async (req, res) => {
     const menuItems = await MenuItem.find({ restaurantId });
     const orders = await Order.find({ restaurantId }).sort({ createdAt: -1 });
 
-    console.log("📋 Menu items for restaurant:", restaurantId);
-    console.log(menuItems);
+    // console.log("📋 Menu items for restaurant:", restaurantId);
+    // console.log(menuItems);
     res.json({
       ok: true,
       restaurantName: req.session.restaurantName || "Restaurant",

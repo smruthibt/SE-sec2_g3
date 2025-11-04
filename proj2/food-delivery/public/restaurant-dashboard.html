@@ -352,6 +352,8 @@
 
   items.forEach(i => {
     const li = el("li", "list-group-item d-flex justify-content-between align-items-center");
+    li.dataset.id = i._id; // 🔑 allows editItem() to find the right element
+
 
     li.innerHTML = `
       <div>
@@ -432,26 +434,70 @@
 
 
 // Simple prompt-based editing — replace with modal if you prefer
+// Inline editor for menu items (no popups)
 async function editItem(id, currentName, currentDesc, currentPrice, currentImg) {
-  const name = prompt("Enter new name:", currentName);
-  const description = prompt("Enter new description:", currentDesc);
-  const price = parseFloat(prompt("Enter new price:", currentPrice));
+  const li = document.querySelector(`#menuList li[data-id="${id}"]`);
+  if (!li) return;
 
-  if (!name || isNaN(price)) return alert("Invalid input!");
+  // Replace item display with editable fields
+  li.innerHTML = `
+    <div class="w-100">
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Name</label>
+        <input id="edit-name-${id}" type="text" class="form-control" value="${currentName}">
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Description</label>
+        <textarea id="edit-desc-${id}" class="form-control" rows="2">${currentDesc}</textarea>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Price</label>
+        <input id="edit-price-${id}" type="number" step="0.01" class="form-control" value="${currentPrice}">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Image URL</label>
+        <input id="edit-img-${id}" type="text" class="form-control" value="${currentImg}">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-success" onclick="saveEdit('${id}')">✅ Save</button>
+        <button class="btn btn-outline-secondary" onclick="cancelEdit('${id}')">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveEdit(id) {
+  const name = document.getElementById(`edit-name-${id}`).value.trim();
+  const description = document.getElementById(`edit-desc-${id}`).value.trim();
+  const price = parseFloat(document.getElementById(`edit-price-${id}`).value);
+  const imageUrl = document.getElementById(`edit-img-${id}`).value.trim();
+
+  if (!name || isNaN(price)) {
+    alert("Please enter a valid name and price.");
+    return;
+  }
 
   const res = await fetch(`${API_BASE}/restaurant-dashboard/menu/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ name, description, price, imageUrl: currentImg })
+    body: JSON.stringify({ name, description, price, imageUrl })
   });
 
   if (res.ok) {
-    alert("Item updated!");
     loadDashboard();
   } else {
-    alert("Failed to update item");
+    const data = await res.json().catch(() => ({}));
+    alert("Failed to update item: " + (data.error || "unknown error"));
   }
+}
+
+function cancelEdit(id) {
+  loadDashboard(); // reloads to restore normal view
 }
 
 
