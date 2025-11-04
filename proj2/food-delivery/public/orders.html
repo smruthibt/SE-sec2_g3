@@ -226,7 +226,10 @@
                 </div>
               </div>
               <div class="d-flex gap-2 mt-2">
-                <a class="btn btn-outline-secondary btn-sm" href="/index.html">Order again</a>
+                <button class="btn btn-outline-secondary btn-sm" data-reorder="${o._id}">
+  Order again
+</button>
+
                 <button class="btn btn-outline-primary btn-sm" onclick="copyOrderId('${o._id}')">Copy ID</button>
               </div>
             </div>
@@ -234,7 +237,63 @@
         </div>
       </div>`;
     }
+async function reorderOrder(order) {
+    try {
+      for (const it of (order.items || [])) {
+        // Try common id fields used in schemas
+        const menuItemId = it.menuItemId || it.itemId || it._id;
+        if (!menuItemId) continue;
 
+        const payload = {
+          menuItemId,
+          restaurantId: order.restaurantId,
+          quantity: Math.max(1, Number(it.quantity || 1)),
+        };
+
+        const res = await fetch(`${API_BASE}/cart`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        if (res.status === 401) {           // not logged in as customer
+          window.location.href = '/customer-login.html';
+          return false;
+        }
+        if (!res.ok) {
+          // Stop on first failure so we don't end up with half a cart
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  // Wire all [data-reorder] buttons after orders are rendered
+  function wireReorderButtons(orders) {
+    document.querySelectorAll('[data-reorder]').forEach(btn => {
+      const id = btn.getAttribute('data-reorder');
+      const order = orders.find(o => String(o._id) === String(id));
+      if (!order) return;
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const ok = await reorderOrder(order);
+        btn.disabled = false;
+
+        if (ok) {
+          // go straight to cart after successfully re-adding everything
+          window.location.href = '/cart.html';
+        } else {
+          alert('Could not re-add one or more items (maybe out of stock or removed).');
+        }
+      });
+    });
+  }
     async function loadOrders(){
       wrap.innerHTML = `
         <div class="order-card p-4">
@@ -268,6 +327,7 @@
       }));
 
       wrap.innerHTML = orders.map(o => orderCard(o, cache.get(String(o.restaurantId)))).join('');
+      wireReorderButtons(orders);
       updateCartCount();
     }
 
