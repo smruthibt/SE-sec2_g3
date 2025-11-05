@@ -50,12 +50,6 @@
   "jest": {
     "testEnvironment": "node",
     "verbose": true,
-    "transform": {},
-    "testPathIgnorePatterns": [
-    "/node_modules/",
-    "/tests/e2e/",
-    "/playwright-report/",
-    "/test-results/"
-  ]
+    "transform": {}
   }
 }
