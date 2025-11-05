@@ -179,6 +179,17 @@
     document.getElementById('yearFooter').textContent = new Date().getFullYear();
     const API_BASE = (window.API_BASE || (location.origin + "/api"));
 
+    async function loadDriverInfo() {
+      const res = await fetch(`${API_BASE}/driver/me`, { credentials: "include" });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.querySelector("h2.fw-bold").textContent = `Welcome, ${data.driverName}!`;
+      } else {
+        document.querySelector("h2.fw-bold").textContent = "Welcome, Driver!";
+      }
+    }
+
     // === Load New Orders ===
     async function loadNewOrders() {
       const res = await fetch(`${API_BASE}/driver/orders/new`, { credentials: 'include' });
@@ -192,6 +203,8 @@
                 <p><b>Pickup (Restaurant):</b> ${o.restaurantLocation}</p>
                 <p><b>Delivery (Customer):</b> ${o.customerLocation}</p>
                 <p><b>Payment:</b> $${o.deliveryPayment}</p>
+                <p><b>Placed At:</b> ${new Date(o.createdAt).toLocaleString()}</p>
+
               </div>
               <div class="align-self-center">
                 <button class="btn btn-accent" onclick="acceptOrder('${o._id}')">Accept</button>
@@ -218,6 +231,8 @@
           <div class="card mb-3 p-3">
             <p><b>Pickup:</b> ${o.restaurantLocation || 'N/A'}</p>
             <p><b>Delivery:</b> ${o.customerLocation || o.deliveryLocation || 'N/A'}</p>
+            <p><b>Placed At:</b> ${new Date(o.createdAt).toLocaleString()}</p>
+
             <button class="btn btn-primary" onclick="markDelivered('${o._id}')">Mark Delivered</button>
           </div>`).join('')
         : `<p class="text-muted">No pending deliveries.</p>`;
@@ -252,8 +267,10 @@
     document.getElementById('pending-tab').addEventListener('shown.bs.tab', loadPending);
 
     // === Initial Load ===
+    loadDriverInfo();
     loadNewOrders();
     loadPending();
+    setInterval(loadNewOrders, 10000);
   </script>
   <footer class="border-top bg-white">
   <div class="container py-5">

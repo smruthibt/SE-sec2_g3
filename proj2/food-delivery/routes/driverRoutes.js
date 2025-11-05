@@ -44,7 +44,12 @@ router.post("/login", async (req, res) => {
     req.session.driverName = auth.driverId.fullName;
 
     // Redirect to welcome page (session will store name)
-    res.redirect("/driver-dashboard.html");
+    res.json({
+      ok: true,
+      message: `Welcome ${auth.driverId.fullName}!`,
+      redirect: "/driver-dashboard.html"
+    });
+
 
   } catch (err) {
     console.error("Driver Registration Error:", err);

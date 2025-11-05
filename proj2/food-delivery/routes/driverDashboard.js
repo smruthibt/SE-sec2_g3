@@ -30,16 +30,23 @@ router.get('/orders/new', async (req, res) => {
 router.post('/orders/accept/:id', async (req, res) => {
   try {
     const driverId = req.session.driverId;
-    const order = await Order.findByIdAndUpdate(req.params.id, {
-      driverId,
-      status: 'out_for_delivery',
-      deliveryPayment: 5
-    });
+    const order = await Order.findOneAndUpdate(
+      { _id: req.params.id, driverId: null },   // only if still unassigned
+      { driverId, status: 'out_for_delivery', deliveryPayment: 5 },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(400).json({ error: 'Order already taken by another driver' });
+    }
+
     res.json({ message: 'Order accepted', order });
   } catch (err) {
+    console.error(err);
     res.status(500).send('Error accepting order');
   }
 });
+
 
 
 router.get('/orders/pending', async (req, res) => {
@@ -95,5 +102,19 @@ router.get('/payments', async (req, res) => {
     res.status(500).send('Error fetching payments');
   }
 });
+
+// GET /api/driver/me  → returns driver info from session
+router.get("/me", (req, res) => {
+  if (!req.session.driverId) {
+    return res.status(401).json({ ok: false, error: "Not logged in" });
+  }
+
+  res.json({
+    ok: true,
+    driverName: req.session.driverName,
+    driverId: req.session.driverId,
+  });
+});
+
 
 export default router;

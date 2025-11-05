@@ -7,15 +7,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import session from 'express-session';
+import MongoStore from "connect-mongo";
+
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({ origin: ["http://localhost:3000", "http://localhost:4000"], credentials: true }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:4000"], credentials: true }));
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 
@@ -23,12 +27,16 @@ app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/food_delivery_app",
+    collectionName: "sessions",
+  }),
   cookie: {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: "lax",
     secure: false,
-    maxAge: 1000 * 60 * 60 * 2
-  }
+    maxAge: 1000 * 60 * 60 * 2, // 2 hours
+  },
 }));
 
 // Routers
