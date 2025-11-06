@@ -6,11 +6,12 @@ on:
 
 jobs:
   test:
-    name: Run Jest Tests
+    name: Run Jest Tests (BE + FE)
     runs-on: ubuntu-latest
 
     env:
-      NODE_ENV: test   
+      NODE_ENV: test 
+      CI: true  
 
     defaults:
       run:
@@ -36,6 +37,9 @@ jobs:
 
       - name: Run Jest tests
         run: npm test
+
+      - name: Run frontend Jest(jsdom)
+        run: npm run test:fe
         
   e2e:
     name: Run Playwright E2E
