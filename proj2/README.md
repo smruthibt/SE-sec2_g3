@@ -1,4 +1,4 @@
-<p align="left">
+<p align="center">
   <img src="https://github.com/divyaka9/judge0-frontend/actions/workflows/ci.yml/badge.svg" alt="Build Status" />
   <img src="https://img.shields.io/badge/coverage-~79%25-green" alt="Coverage" />
   <img src="https://img.shields.io/badge/tests-pytest%20%7C%20jest-blue" alt="Tests" />
@@ -7,7 +7,17 @@
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 
-
+<p align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" alt="React" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" alt="JavaScript" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" alt="Python" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" alt="Docker" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub Actions" width="45" height="45"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jest/jest-plain.svg" alt="Jest" width="45" height="45"/>
+</p>
 
 # 🍽️ BiteCode Platform
 
