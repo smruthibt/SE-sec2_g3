@@ -158,8 +158,14 @@ Preserved to trace the project’s evolution and serve as learning reference mat
 
 ## 🧾 Naming & Branding
 
-The name **BiteCode** is an original, non-commercial creation that combines the ideas of *food (“bite”)* and *coding (“code”)* — symbolizing the perfect blend of culinary enjoyment and intellectual challenge.  
-It is unique and free from known trademark conflicts.
+The name BiteCode is an original and distinctive concept that merges food delivery and competitive programming into one engaging platform.
+The name symbolizes the fusion of “Bite” — representing food and satisfaction — with “Code” — representing logic and creativity.
+
+BiteCode reflects the spirit of fun learning and reward-driven engagement:
+
+“Order, code, and earn — every bite makes you smarter.”
+
+The name is unique, created specifically for this project, and free from any known trademark conflicts.
 
 ---
 
