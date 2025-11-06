@@ -73,19 +73,32 @@
       color: var(--accent);
     }
 
-.auth-fixed{
-  position: fixed;
-  top: 8px;
-  right: 12px;
-  z-index: 1100;          
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
+    .auth-fixed {
+      position: fixed;
+      top: 8px;
+      right: 12px;
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
 
-#authChip{ font-size:.8rem; border:1px solid transparent; }
-.chip-out{ background:#f3f4f6; color:#111827; border-color:#e5e7eb; }  
-.chip-in{  background:#e6f4ea; color:#166534; border-color:#cce3d2; }  
+    #authChip {
+      font-size: .8rem;
+      border: 1px solid transparent;
+    }
+
+    .chip-out {
+      background: #f3f4f6;
+      color: #111827;
+      border-color: #e5e7eb;
+    }
+
+    .chip-in {
+      background: #e6f4ea;
+      color: #166534;
+      border-color: #cce3d2;
+    }
 
 
     /* Hero */
@@ -224,10 +237,10 @@
       </div>
     </div>
   </nav>
-<div class="auth-fixed">
-  <span id="authChip" class="badge rounded-pill px-2 py-1 fw-semibold d-none">Status</span>
-  <button id="authBtn" class="btn btn-outline-secondary btn-sm rounded-pill">Sign in</button>
-</div>
+  <div class="auth-fixed">
+    <span id="authChip" class="badge rounded-pill px-2 py-1 fw-semibold d-none">Status</span>
+    <button id="authBtn" class="btn btn-outline-secondary btn-sm rounded-pill">Sign in</button>
+  </div>
 
   <!-- HERO CAROUSEL -->
   <div id="heroCarousel" class="carousel slide hero" data-bs-ride="carousel" data-bs-interval="3500">
@@ -422,50 +435,50 @@
         cartCountEl.style.display = 'none';
       }
     }
-  const authChip = document.getElementById('authChip');
-  const authBtn  = document.getElementById('authBtn');
+    const authChip = document.getElementById('authChip');
+    const authBtn = document.getElementById('authBtn');
 
-  const LOGOUT_ENDPOINTS = [
-    `${API_BASE}/auth/logout`,
-    `${API_BASE}/logout`,
-    `${API_BASE}/customers/logout`
-  ];
+    const LOGOUT_ENDPOINTS = [
+      `${API_BASE}/auth/logout`,
+      `${API_BASE}/logout`,
+      `${API_BASE}/customers/logout`
+    ];
 
-  async function tryLogout(){
-    for (const url of LOGOUT_ENDPOINTS){
-      try { const r = await fetch(url,{method:'POST',credentials:'include'}); if (r.ok||r.status===204) return true; } catch{}
+    async function tryLogout() {
+      for (const url of LOGOUT_ENDPOINTS) {
+        try { const r = await fetch(url, { method: 'POST', credentials: 'include' }); if (r.ok || r.status === 204) return true; } catch { }
+      }
+      for (const url of LOGOUT_ENDPOINTS) {
+        try { const r = await fetch(url, { method: 'GET', credentials: 'include' }); if (r.ok || r.status === 204) return true; } catch { }
+      }
+      return false;
     }
-    for (const url of LOGOUT_ENDPOINTS){
-      try { const r = await fetch(url,{method:'GET',credentials:'include'}); if (r.ok||r.status===204) return true; } catch{}
-    }
-    return false;
-  }
 
-  function setAuthUI(state){        
-    authChip.classList.remove('d-none','chip-in','chip-out');
-    if (state==='in'){
-      authChip.textContent = 'Signed in';
-      authChip.classList.add('chip-in');
-      authBtn.textContent = 'Sign out';
-      authBtn.className = 'btn btn-outline-dark btn-sm rounded-pill';
-      authBtn.onclick = async ()=>{ await tryLogout(); window.location.href='/customer-login.html'; };
-    } else {
-      authChip.textContent = 'Not logged in';
-      authChip.classList.add('chip-out');
-      authBtn.textContent = 'Sign in';
-      authBtn.className = 'btn btn-outline-secondary btn-sm rounded-pill';
-      authBtn.onclick = ()=> window.location.href='/customer-login.html';
+    function setAuthUI(state) {
+      authChip.classList.remove('d-none', 'chip-in', 'chip-out');
+      if (state === 'in') {
+        authChip.textContent = 'Signed in';
+        authChip.classList.add('chip-in');
+        authBtn.textContent = 'Sign out';
+        authBtn.className = 'btn btn-outline-dark btn-sm rounded-pill';
+        authBtn.onclick = async () => { await tryLogout(); window.location.href = '/customer-login.html'; };
+      } else {
+        authChip.textContent = 'Not logged in';
+        authChip.classList.add('chip-out');
+        authBtn.textContent = 'Sign in';
+        authBtn.className = 'btn btn-outline-secondary btn-sm rounded-pill';
+        authBtn.onclick = () => window.location.href = '/customer-login.html';
+      }
     }
-  }
 
-  async function checkAuth(){
-    try{
-      const res = await fetch(`${API_BASE}/cart`, {credentials:'include'});
-      setAuthUI(res.status===401 ? 'out' : 'in');
-    }catch{
-      setAuthUI('out');
+    async function checkAuth() {
+      try {
+        const res = await fetch(`${API_BASE}/cart`, { credentials: 'include' });
+        setAuthUI(res.status === 401 ? 'out' : 'in');
+      } catch {
+        setAuthUI('out');
+      }
     }
-  }
 
     // Init
     (async function init() {
@@ -519,6 +532,9 @@
             </li>
             <li class="mb-2">
               <a class="link-muted" href="/restaurant-register.html">Own a restaurant? Increase your reach 🍽️</a>
+            </li>
+            <li class="mb-2">
+              <a class="link-muted" href="/about.html">About Us</a>
             </li>
           </ul>
 
