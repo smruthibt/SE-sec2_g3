@@ -207,6 +207,7 @@ function Modal({ open, onClose, title, children }) {
 function App() {
   const session = useChallengeSession(); //get token + expiry
 
+
   React.useEffect(() => {
     if (session.loading || session.error || !session.token) return;
     const id = setInterval(() => {
@@ -404,6 +405,7 @@ function App() {
           `It’s automatically saved to your account for your next order.`
         );
         setModalOpen(true);
+        setModalTitle("Submission Successful");
         setTimeout(() => {
           try { window.close(); } catch { }
         }, 2000);
@@ -523,46 +525,46 @@ function App() {
       }}
     >
 
-{/* === Header === */}
-<header
-  style={{
-    textAlign: "center",
-    margin: 0,
-    padding: "8px 0 4px 0", // minimal vertical padding
-    borderBottom: "1px solid rgba(0,255,179,0.15)",
-  }}
->
-  {/* Glowing BiteCode logo only */}
-  <img
-    src="/Dark_BitecodeNOBG1.png"
-    alt="BiteCode logo"
-    style={{
-      height: 240, // moderate size
-      width: 240,
-      objectFit: "contain",
-      animation: "logoGlow 3s infinite ease-in-out",
-      margin: "0 auto",
-      display: "block",
-    }}
-  />
+      {/* === Header === */}
+      <header
+        style={{
+          textAlign: "center",
+          margin: 0,
+          padding: "8px 0 4px 0", // minimal vertical padding
+          borderBottom: "1px solid rgba(0,255,179,0.15)",
+        }}
+      >
+        {/* Glowing BiteCode logo only */}
+        <img
+          src="/Dark_BitecodeNOBG1.png"
+          alt="BiteCode logo"
+          style={{
+            height: 240, // moderate size
+            width: 240,
+            objectFit: "contain",
+            animation: "logoGlow 3s infinite ease-in-out",
+            margin: "0 auto",
+            display: "block",
+          }}
+        />
 
-  {/* Optional tagline */}
-  <p
-    style={{
-      color: "#a6c9da",
-      fontSize: 15,
-      marginTop: 4,
-      marginBottom: 4,
-      fontFamily: "Poppins, system-ui, sans-serif",
-      letterSpacing: 0.4,
-    }}
-  >
-    Write. Run. Earn. ⚡ Challenge your limits!
-  </p>
+        {/* Optional tagline */}
+        <p
+          style={{
+            color: "#a6c9da",
+            fontSize: 15,
+            marginTop: 4,
+            marginBottom: 4,
+            fontFamily: "Poppins, system-ui, sans-serif",
+            letterSpacing: 0.4,
+          }}
+        >
+          Write. Run. Earn. ⚡ Challenge your limits!
+        </p>
 
-  {/* Glow animation */}
-  <style>
-    {`
+        {/* Glow animation */}
+        <style>
+          {`
       @keyframes logoGlow {
         0% {
           filter: drop-shadow(0 0 6px rgba(0,255,179,0.5))
@@ -578,8 +580,8 @@ function App() {
         }
       }
     `}
-  </style>
-</header>
+        </style>
+      </header>
 
       {/* === Main Section === */}
       <div
