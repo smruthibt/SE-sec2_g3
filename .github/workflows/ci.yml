@@ -1,4 +1,4 @@
-name: Judge0 CI Tests
+name: BiteCode CI Tests
 
 on:
   push:
