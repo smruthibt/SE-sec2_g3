@@ -1,24 +1,33 @@
-name: Frontend Coverage
-
+name: Full Repo Coverage
 on:
   push:
     branches: [main]
   pull_request:
 
 jobs:
-  test:
+  test-and-coverage:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install dependencies
+      # --- JUDGE0 FRONTEND TESTS ---
+      - name: Install judge0-frontend dependencies
         run: npm install --prefix proj2/judge0-frontend
 
-      - name: Run tests with coverage
+      - name: Run judge0-frontend tests with coverage
         run: npm test --prefix proj2/judge0-frontend -- --coverage
 
-      - name: Upload Coverage to Codecov
+      # --- FOOD DELIVERY TESTS ---
+      - name: Install food-delivery dependencies
+        run: npm install --prefix proj2/food-delivery
+
+      - name: Run food-delivery tests with coverage
+        run: npm test --prefix proj2/food-delivery -- --coverage
+
+      # --- Upload ALL Coverage to Codecov ---
+      - name: Upload coverage results to Codecov
         uses: codecov/codecov-action@v4
         with:
-          files: proj2/judge0-frontend/coverage/lcov.info
+          files: |
+            proj2/judge0-frontend/coverage/lcov.info
+            proj2/food-delivery/coverage/lcov.info
