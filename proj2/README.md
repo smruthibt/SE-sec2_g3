@@ -4,9 +4,14 @@
     <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.17544828.svg" alt="DOI" />
   </a>
 
-  <!-- CI Status -->
+  <!-- Judge CI Status -->
   <a href="https://github.com/Divyaka9/SE-sec2_g3/actions">
-    <img src="https://github.com/Divyaka9/SE-sec2_g3/actions/workflows/ci.yml/badge.svg" alt="All Tests" />
+    <img src="https://github.com/Divyaka9/SE-sec2_g3/actions/workflows/ci.yml/badge.svg" alt="Judge0 Tests" />
+  </a>
+
+  <!-- Food Delivery CI Status -->
+  <a href="https://github.com/Divyaka9/SE-sec2_g3/actions">
+    <img src="https://github.com/Divyaka9/SE-sec2_g3/actions/workflows/test.yml/badge.svg" alt="Food Delivery Tests" />
   </a>
 
   <!-- Complete Code Coverage -->
