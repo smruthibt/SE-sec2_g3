@@ -14,16 +14,6 @@
     <img src="https://codecov.io/gh/Divyaka9/SE-sec2_g3/branch/main/graph/badge.svg" />
   </a>
 
-  <!-- Judge0 Testing -->
-  <a href="[https://github.com/Divyaka9/SE-sec2_g3/tree/main/proj2/judge0-frontend/src/__tests__)">
-    <img src="https://img.shields.io/badge/tests-pytest%20%7C%20jest-blue" alt="Tests: pytest | jest" />
-  </a>
-
-  <!-- Food Delivery Testing -->
-  <a href="[https://github.com/Divyaka9/SE-sec2_g3/tree/main/proj2/food-delivery/tests)">
-    <img src="https://img.shields.io/badge/tests-jest-pink" alt="Tests: jest" />
-  </a>
-
   <!-- License -->
   <a href="https://github.com/Divyaka9/SE-sec2_g3/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
