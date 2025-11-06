@@ -1,3 +1,9 @@
+<p align="left">
+  <img src="https://img.shields.io/badge/coverage-~79%25-green" alt="Coverage" />
+  <img src="https://img.shields.io/badge/tests-pytest%20%7C%20jest-blue" alt="Tests" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
+</p>
+
 # 🍽️ BiteCode Platform
 
 **BiteCode** brings together food delivery and competitive programming in a unique, gamified experience.  
