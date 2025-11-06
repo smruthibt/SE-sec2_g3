@@ -6,7 +6,7 @@
 
   <!-- CI Status -->
   <a href="https://github.com/Divyaka9/SE-sec2_g3/actions">
-    <img src="https://github.com/Divyaka9/SE-sec2_g3/actions/workflows/ci.yml/badge.svg" alt="Judge0 CI Tests" />
+    <img src="https://github.com/Divyaka9/SE-sec2_g3/actions/workflows/ci.yml/badge.svg" alt="All Tests" />
   </a>
 
   <!-- Coverage -->
