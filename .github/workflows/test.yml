@@ -3,6 +3,8 @@ name: Run Tests for Food Delivery
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "0 2 * * *"  # run every day at 02:00 UTC
 
 jobs:
   test:
