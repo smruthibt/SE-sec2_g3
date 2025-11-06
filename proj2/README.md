@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://zenodo.org/badge/1048660183.svg" />
+  <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1048660183.svg" alt="DOI" />
   <img src="https://github.com/divyaka9/judge0-frontend/actions/workflows/ci.yml/badge.svg" alt="Build Status" />
   <img src="https://img.shields.io/badge/coverage-~79%25-green" alt="Coverage" />
   <img src="https://img.shields.io/badge/tests-pytest%20%7C%20jest-blue" alt="Tests" />
