@@ -116,7 +116,7 @@ When all testcases pass:
    ```
 2. On success, a reward banner appears:
    ```text
-   🎉 $5 / $10 / $20 Cashback Unlocked!
+   🎉 5% / 10% / 20% Cashback Unlocked!
    ```
 3. A coupon code is generated and linked to the user’s food delivery account.
 
@@ -149,8 +149,7 @@ When all testcases pass:
 ## 🧭 License
 
 
-This submodule is part of the **[BiteCode Platform](../README.md)**  
-and is licensed under the **[MIT License](../LICENSE)**.
+This submodule is part of the **[BiteCode Platform](../README.md)** and is licensed under the **[MIT License](../LICENSE)**.
 ---
 
 ✅ *Order. Code. Earn. Every bite makes you smarter.*
