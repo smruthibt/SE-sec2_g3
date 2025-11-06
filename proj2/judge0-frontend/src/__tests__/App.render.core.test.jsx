@@ -6,7 +6,7 @@ test('renders header, difficulty select, editor, output, and run buttons', () =>
 
   // Header: pick only the H1, not the footer line that also contains "BiteCode"
   expect(
-    screen.getByRole('heading', { level: 1, name: /BiteCode/i })
+     screen.getByAltText(/BiteCode logo/i)
   ).toBeInTheDocument();
 
   // Difficulty select: first combobox in the left panel (there may be another for language)

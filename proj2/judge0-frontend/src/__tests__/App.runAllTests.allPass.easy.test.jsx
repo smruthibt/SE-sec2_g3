@@ -17,6 +17,32 @@ jest.mock("../data/problems.json", () => [
   },
 ]);
 
+beforeEach(() => {
+  global.fetch = jest.fn((url) => {
+    // When App finishes all tests and calls /challenges/complete,
+    // return a fake coupon payload for EASY difficulty.
+    if (typeof url === "string" && url.includes("/challenges/complete")) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            label: "$5 Cashback",
+            code: "TEST-EASY-1234",
+          }),
+      });
+    }
+
+    // For polling /challenges/session or any other fetch in tests,
+    // just return a benign empty payload.
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({}),
+    });
+  });
+});
+
 test(
   "EASY difficulty unlocks $5 Cashback reward when all tests pass",
   async () => {
@@ -38,13 +64,15 @@ test(
       fireEvent.click(runTestsBtn);
     });
 
+    // This looks for "Unlocked!"
     const unlockedMsg = await screen.findByText(/Unlocked!/i, {}, { timeout: 10000 });
     expect(unlockedMsg).toBeInTheDocument();
 
-    //  Safely locate the dynamic reward text near that “Unlocked!” element
+    // The reward stripe should mention "$5 Cashback"
     const rewardStripe = unlockedMsg.closest("div");
     expect(rewardStripe).toHaveTextContent(/\$5 Cashback/i);
 
+    // Modal title + coupon code text
     const modalTitle = await screen.findByText(/Submission Successful/i, {}, { timeout: 10000 });
     const couponText = await screen.findByText(/Coupon Code:/i, {}, { timeout: 10000 });
     expect(modalTitle).toBeInTheDocument();
