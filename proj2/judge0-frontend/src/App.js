@@ -208,21 +208,47 @@ function App() {
   const session = useChallengeSession(); //get token + expiry
 
   React.useEffect(() => {
-    if (!session?.info?.expiresAt) return;
-    const end = new Date(session.info.expiresAt).getTime();
+    if (session.loading || session.error || !session.token) return;
     const id = setInterval(() => {
-      if (Date.now() > end) {
-        // Session expired (e.g., driver delivered)
-        setModalMsg("⏰ Time’s up — delivery completed.");
-        setModalOpen(true);
-        clearInterval(id);
-        setTimeout(() => {
-          try { window.close(); } catch { }
-        }, 2000);
-      }
-    }, 1000);
+      fetch(`${API_BASE}/challenges/session?token=${encodeURIComponent(session.token)}`, {
+        credentials: "include",
+      })
+        .then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, status: r.status, d })))
+        .then(({ ok, d, status }) => {
+          if (ok) return; // still active, do nothing
+
+          // Not ok → session expired (could be because order delivered)
+          // const errMsg = (d && d.error) ? d.error.toLowerCase() : "";
+
+          let msg;
+          if (status === 410) {
+            //custom message
+            msg = "🚪 The driver is at your door.\nSorry, better luck next time — enjoy your food!!";
+          } else {
+            msg = d?.error || "⏰ Session ended!!";
+          }
+
+          setModalMsg(msg);
+          setModalTitle(status === 410 ? "Driver Arrived" : "Session Ended");
+          setModalOpen(true);
+          clearInterval(id);
+
+          // try closing the challenge window (it was opened with window.open from orders page)
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch {
+              // ignore if browser blocks it
+            }
+          }, 2500);
+        })
+        .catch(() => {
+          // ignore network errors for polling
+        });
+    }, 3000); // check every 3 seconds
+
     return () => clearInterval(id);
-  }, [session?.info?.expiresAt]);
+  }, [session.loading, session.error, session.token]);
 
   const [language, setLanguage] = useState("python");
   const [selectedProblem, setSelectedProblem] = useState(problems[0]);
@@ -235,9 +261,11 @@ function App() {
   const [memory, setMemory] = useState("");
   const [userScore, setUserScore] = useState(0);
   const [solvedProblems, setSolvedProblems] = useState([]);
+  // const [testResults, setTestResults] = React.useState({}); // { testId: {status, got, expected} }
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMsg, setModalMsg] = useState("");
-  const [testResults, setTestResults] = React.useState({}); // { testId: {status, got, expected} }
+  const [modalTitle, setModalTitle] = useState("Submission Successful");
+  const [testResults, setTestResults] = React.useState({});
   const [isRunningTests, setIsRunningTests] = React.useState(false);
 
   const groupedProblems = useMemo(() => {
@@ -999,7 +1027,7 @@ function App() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Submission Successful"
+        title={modalTitle}
       >
         <pre
           style={{
