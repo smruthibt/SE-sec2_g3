@@ -1,0 +1,24 @@
+name: Frontend Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install --prefix proj2/judge0-frontend
+
+      - name: Run tests with coverage
+        run: npm test --prefix proj2/judge0-frontend -- --coverage
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: proj2/judge0-frontend/coverage/lcov.info
