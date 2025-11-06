@@ -7,6 +7,10 @@ This project represents the **frontend** portion of the BiteCode ecosystem, inte
 
 ---
 
+## ⚡️ Progress over the weeks at a glance
+
+<video src="https://github.com/user-attachments/assets/3b2a6788-20a3-42a3-9b30-6994e97cd46b" controls width="640"></video>
+
 ## 🚀 Features
 
 - 💻 **Multi-Language Code Editor** — Supports Python, C++, Java, and JavaScript.
