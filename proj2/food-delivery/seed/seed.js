@@ -11,7 +11,7 @@ import User from "../models/User.js";
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/food_delivery_app";
+const MONGODB_URI = process.env.MONGODB_URI;
 const CLEAR_USERS = /^true$/i.test(process.env.CLEAR_USERS || "false");
 let SEED = process.env.SEED ? Number(process.env.SEED) : null;
 

@@ -15,7 +15,7 @@ export default defineConfig({
       PLAYWRIGHT: '1',
       NODE_ENV: 'test',
       // DB + secrets for CI/local e2e
-      MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/food_delivery_app',
+      MONGODB_URI: process.env.MONGODB_URI,
       SESSION_SECRET: process.env.SESSION_SECRET || 'testsecret',
       JWT_SECRET: process.env.JWT_SECRET || 'testjwt',
       HOST: '0.0.0.0',

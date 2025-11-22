@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import Restaurant from '../models/Restaurant.js';
 import MenuItem from '../models/MenuItem.js';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/food_delivery_app';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 /**
  * 🔧 EDIT ME:
