@@ -462,6 +462,9 @@
         <div class="mt-2">
           <button class="btn btn-sm btn-primary" onclick="startChallenge('${o._id}')">
             Try a coding challenge
+           </button>
+          <button class="btn btn-sm btn-outline-success" onclick="startChessChallenge('${o._id}')">
+            Try a chess puzzle
           </button>
           <small class="text-muted ms-2">Solve before delivery to win.</small>
         </div>
@@ -689,7 +692,33 @@
         alert("Error starting challenge");
       }
     }
+    // === Chess challenge flow (separate from coding challenge) ===
+    function startChessChallenge(orderId) {
+      // For now we always start with medium difficulty; later you can let user choose on chess page
+      const difficulty = "medium";
 
+      const url = `/chess.html?orderId=${encodeURIComponent(orderId)}&difficulty=${encodeURIComponent(difficulty)}`;
+      const child = window.open(url, "_blank");
+
+      if (!child) {
+        alert("Please allow popups to start the chess challenge.");
+        return;
+      }
+
+      // When the chess tab closes, refresh orders & coupons
+      const timer = setInterval(() => {
+        if (child.closed) {
+          clearInterval(timer);
+          loadOrders();
+          loadCoupons();
+        }
+      }, 1000);
+    }
+
+    // expose chess starter so inline onclick works
+    window.startChessChallenge = startChessChallenge;
+
+    
     // === Fetch and show coupons ===
     async function loadCoupons() {
       try {
