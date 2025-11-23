@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Mate in 1",
+    "description": "White to move and mate in one.",
+    "fen": "r1bqk2r/pppp1ppp/2n2n2/4p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w kq - 0 1",
+    "orientation": "white",
+    "solutionSan": ["Bxf7#"],
+    "maxMoves": 1,
+    "hint": "Look at the f7 square."
+  },
+  {
+    "id": 2,
+    "title": "Win the Queen",
+    "description": "White to move and win material.",
+    "fen": "r3k2r/pp1n1ppp/2p1bn2/3p4/3P4/2NBPN2/PP3PPP/R2Q1RK1 w kq - 0 1",
+    "orientation": "white",
+    "solutionSan": ["Qb3", "Qxb7"],
+    "maxMoves": 2,
+    "hint": "Target the b7 pawn and the rook behind it."
+  },
+  {
+    "id": 3,
+    "title": "Mate in 2",
+    "description": "Black to move and mate in two.",
+    "fen": "5rk1/ppp3pp/8/3Q4/1P6/P7/2P2PPP/5RK1 b - - 0 1",
+    "orientation": "black",
+    "solutionSan": ["Rxf2", "Qxf2#"],
+    "maxMoves": 2,
+    "hint": "Sacrifice something on f2."
+  }
+]
