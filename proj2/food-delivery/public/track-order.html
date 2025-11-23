@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Order - BiteCode</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    const OrderTrackingMap = () => {
+      const [orderData, setOrderData] = useState(null);
+      const [driverLocation, setDriverLocation] = useState(null);
+      const [eta, setEta] = useState(null);
+      const [distance, setDistance] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      
+      const mapRef = useRef(null);
+      const googleMapRef = useRef(null);
+      const driverMarkerRef = useRef(null);
+      const customerMarkerRef = useRef(null);
+      const directionsRendererRef = useRef(null);
+      const pollingIntervalRef = useRef(null);
+
+      const getOrderId = () => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('orderId');
+      };
+
+      const initMap = useCallback((driverLoc, customerLoc) => {
+        if (!window.google || !mapRef.current) return;
+
+        const map = new window.google.maps.Map(mapRef.current, {
+          zoom: 13,
+          center: driverLoc,
+          styles: [
+            { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+          ]
+        });
+
+        googleMapRef.current = map;
+
+        driverMarkerRef.current = new window.google.maps.Marker({
+          position: driverLoc,
+          map: map,
+          title: "Driver",
+          icon: {
+            path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+            scale: 6,
+            fillColor: "#16a34a",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            rotation: 0
+          }
+        });
+
+        customerMarkerRef.current = new window.google.maps.Marker({
+          position: customerLoc,
+          map: map,
+          title: "Delivery Location",
+          icon: {
+            url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23dc3545'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E",
+            scaledSize: new window.google.maps.Size(32, 32),
+            anchor: new window.google.maps.Point(16, 32)
+          }
+        });
+
+        directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+          map: map,
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: "#16a34a",
+            strokeWeight: 5,
+            strokeOpacity: 0.7
+          }
+        });
+
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(driverLoc);
+        bounds.extend(customerLoc);
+        map.fitBounds(bounds);
+      }, []);
+
+      const calculateRoute = useCallback(async (driverLoc, customerLoc) => {
+        if (!window.google || !directionsRendererRef.current) return;
+
+        const directionsService = new window.google.maps.DirectionsService();
+        
+        try {
+          const results = await directionsService.route({
+            origin: driverLoc,
+            destination: customerLoc,
+            travelMode: window.google.maps.TravelMode.DRIVING
+          });
+
+          directionsRendererRef.current.setDirections(results);
+          
+          const route = results.routes[0];
+          if (route && route.legs[0]) {
+            setDistance(route.legs[0].distance.text);
+            setEta(route.legs[0].duration.text);
+          }
+        } catch (err) {
+          console.error("Error calculating route:", err);
+        }
+      }, []);
+
+      const updateDriverPosition = useCallback((newLocation) => {
+        if (driverMarkerRef.current && googleMapRef.current) {
+          const oldPos = driverMarkerRef.current.getPosition();
+          driverMarkerRef.current.setPosition(newLocation);
+          
+          if (oldPos && window.google.maps.geometry) {
+            const bearing = window.google.maps.geometry.spherical.computeHeading(oldPos, newLocation);
+            const icon = driverMarkerRef.current.getIcon();
+            icon.rotation = bearing;
+            driverMarkerRef.current.setIcon(icon);
+          }
+        }
+      }, []);
+
+      const fetchTrackingData = useCallback(async () => {
+        const orderId = getOrderId();
+        if (!orderId) {
+          setError("No order ID provided");
+          setLoading(false);
+          return;
+        }
+
+        try {
+          // const API_BASE = window.location.origin + "/api";
+          
+          // const orderRes = await fetch(`${API_BASE}/orders/${orderId}`, {
+          //   credentials: 'include'
+          // });
+          
+          // if (!orderRes.ok) throw new Error("Failed to fetch order");
+          
+          // const order = await orderRes.json();
+          // setOrderData(order);
+
+          if (true) {
+            // const driverRes = await fetch(`${API_BASE}/drivers/${order.driverId}/location`, {
+            //   credentials: 'include'
+            // });
+            
+            if (true) {
+              // const driverData = await driverRes.json();
+              // const driverLoc = {
+              //   lat: driverData.location.coordinates[1],
+              //   lng: driverData.location.coordinates[0]
+              // };
+              const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+              await sleep(3000);
+              const driverLoc = {
+                lat: 35.7796,
+                lng: -78.6382
+              };
+              
+              const customerLoc = {
+                lat: 35.4,
+                lng: -79
+              };
+              
+              setDriverLocation(driverLoc);
+              if (!googleMapRef.current) {
+                initMap(driverLoc, customerLoc);
+              } else {
+                updateDriverPosition(driverLoc);
+              }
+
+              calculateRoute(driverLoc, customerLoc);
+            }
+          }
+
+          setLoading(false);
+        } catch (err) {
+          setError(err.message);
+          setLoading(false);
+        }
+      }, [initMap, updateDriverPosition, calculateRoute]);
+
+      useEffect(() => {
+        const loadGoogleMaps = () => {
+          if (window.google) {
+            fetchTrackingData();
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key={APIKEY_HERE}&libraries=geometry`;
+          script.async = true;
+          script.defer = true;
+          script.onload = () => fetchTrackingData();
+          script.onerror = () => setError("Failed to load Google Maps");
+          document.head.appendChild(script);
+        };
+
+        loadGoogleMaps();
+        pollingIntervalRef.current = setInterval(fetchTrackingData, 5000);
+
+        return () => {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+          }
+        };
+      }, [fetchTrackingData]);
+
+      const formatStatus = (status) => {
+        return status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown';
+      };
+
+      if (loading) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Loading tracking data...</h2>
+              <p className="text-gray-600">Please wait while we locate your driver</p>
+            </div>
+          </div>
+        );
+      }
+
+      if (error) {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">📦</span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Unable to Load Tracking</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => window.close()}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="h-screen flex flex-col bg-gray-50">
+            <div className="bg-white shadow-md px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                <span className="text-2xl">🚗</span>
+                </div>
+                <div>
+                <h1 className="text-xl font-bold text-gray-800">Live Order Tracking</h1>
+                <p className="text-sm text-gray-600">
+                    Order #{orderData?._id?.slice(-6).toUpperCase()}
+                </p>
+                </div>
+            </div>
+            <button
+              onClick={() => window.parent.closeTrackingModal()}
+              className="text-gray-500 hover:text-gray-700 text-3xl leading-none font-light"
+            >
+              ×
+            </button>
+            </div>
+
+            <div className="flex-1 relative">
+            <div ref={mapRef} className="w-full h-full" />
+
+            <div className="absolute top-4 left-4 right-4 flex flex-col gap-3 pointer-events-none">
+                <div className="bg-white rounded-xl shadow-lg p-4 pointer-events-auto">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                    <div className="bg-green-100 p-2 rounded-lg">
+                        <span className="text-xl">📦</span>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-600">Status</p>
+                        <p className="font-semibold text-gray-800">
+                        {formatStatus(orderData?.status)}
+                        </p>
+                    </div>
+                    </div>
+                    {eta && (
+                    <div className="text-right">
+                        <div className="flex items-center gap-1 text-green-600">
+                        <span className="text-xl">⏱️</span>
+                        <span className="font-bold text-lg">{eta}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">{distance} away</p>
+                    </div>
+                    )}
+                </div>
+                </div>
+
+                {orderData?.driverName && (
+                <div className="bg-white rounded-xl shadow-lg p-4 pointer-events-auto">
+                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 p-2 rounded-lg">
+                        <span className="text-xl">👤</span>
+                        </div>
+                        <div>
+                        <p className="text-sm text-gray-600">Your Driver</p>
+                        <p className="font-semibold text-gray-800">{orderData.driverName}</p>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                )}
+
+                {orderData?.deliveryAddress?.address && (
+                <div className="bg-white rounded-xl shadow-lg p-4 pointer-events-auto">
+                    <div className="flex items-start gap-3">
+                    <div className="bg-red-100 p-2 rounded-lg">
+                        <span className="text-xl">📍</span>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-600">Delivery Address</p>
+                        <p className="font-medium text-gray-800">
+                        {orderData.deliveryAddress.address}
+                        </p>
+                    </div>
+                    </div>
+                </div>
+                )}
+            </div>
+            </div>
+        </div>
+        );
+    };
+
+    ReactDOM.render(<OrderTrackingMap />, document.getElementById('root'));
+  </script>
+</body>
+</html>

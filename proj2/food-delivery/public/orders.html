@@ -226,6 +226,73 @@
       text-decoration: underline;
       color: #0e0e0e;
     }
+
+    .tracking-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .tracking-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tracking-modal-content {
+      width: 95%;
+      height: 90%;
+      max-width: 1200px;
+      max-height: 800px;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tracking-modal-header {
+      padding: 16px 24px;
+      background: white;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tracking-modal-body {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tracking-close-btn {
+      background: none;
+      border: none;
+      font-size: 32px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .tracking-close-btn:hover {
+      background: #f3f3f3;
+      color: #000;
+    }
   </style>
 </head>
 
@@ -357,6 +424,25 @@
       </div>
     </div>
   </footer>
+  <div id="trackingModal" class="tracking-modal">
+    <div class="tracking-modal-content">
+      <div class="tracking-modal-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-green-100 p-2 rounded-lg">
+            <span style="font-size: 24px;">🚗</span>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold">Live Order Tracking</h5>
+            <small class="text-muted" id="trackingOrderId"></small>
+          </div>
+        </div>
+        <button class="tracking-close-btn" onclick="closeTrackingModal()">×</button>
+      </div>
+      <div class="tracking-modal-body">
+        <iframe id="trackingFrame" style="width: 100%; height: 100%; border: none;"></iframe>
+      </div>
+    </div>
+  </div>
 
   <script>
     document.getElementById("yearFooter").textContent = new Date().getFullYear();
@@ -522,6 +608,9 @@
             <div class="d-flex gap-2 mt-2">
               <button class="btn btn-outline-secondary btn-sm" data-reorder="${o._id}">Order again</button>
               <button class="btn btn-outline-primary btn-sm" onclick="copyOrderId('${o._id}')">Copy ID</button>
+              ${["out_for_delivery", "enroute"].includes(String(o.status || "").toLowerCase()) 
+                ? `<button class="btn btn-success btn-sm" onclick="trackOrder('${o._id}')">🗺️ Track Order</button>` 
+                : ''}
             </div>
           </div>
         </div>
@@ -729,6 +818,40 @@
       await loadCoupons();
     })();
 
+    window.trackOrder = function(orderId) {
+    // Example coordinates - replace with your actual data from the order
+    // You'll need to get these from your order object
+    
+    // For now, let's fetch the order to get coordinates
+    fetch(`${API_BASE}/orders/${orderId}`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(order => {
+        // Assuming your order has these fields:
+        // order.restaurantLocation.coordinates = [lng, lat]
+        // order.deliveryAddress.coordinates = [lng, lat]
+        
+        const startLat = order.restaurantLocation?.coordinates[1] || 35.7796; // Default to Raleigh
+        const startLng = order.restaurantLocation?.coordinates[0] || -78.6382;
+        const endLat = order.deliveryAddress?.coordinates[1] || 35.8000;
+        const endLng = order.deliveryAddress?.coordinates[0] || -78.6500;
+        
+        const modal = document.getElementById('trackingModal');
+        const iframe = document.getElementById('trackingFrame');
+        const orderIdEl = document.getElementById('trackingOrderId');
+        
+        orderIdEl.textContent = `Order #${shortId(orderId)}`;
+        
+        // Build URL with coordinates
+        iframe.src = `/track-order.html?orderId=${orderId}startLat=${startLat}&startLng=${startLng}&endLat=${endLat}&endLng=${endLng}`;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      })
+      .catch(err => {
+        console.error('Failed to fetch order:', err);
+        alert('Could not load tracking information');
+      });
+  };
   </script>
 
 </body>
