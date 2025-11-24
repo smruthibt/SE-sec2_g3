@@ -5,6 +5,7 @@ const customerAuthSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   favoriteDishes: { type: [String], default: [] },
   dietRequirements: { type: String },
-  address: { type: String, required: true }
+  address: { type: String, required: true },
+  coordinates: { type: [Number], required: true },
 }, { timestamps: true });
 export default mongoose.model('CustomerAuth', customerAuthSchema);

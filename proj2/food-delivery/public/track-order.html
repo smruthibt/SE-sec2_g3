@@ -218,6 +218,20 @@
         };
       }, [fetchTrackingData]);
 
+      window.closeTrackingModal = function() {
+        const modal = document.getElementById('trackingModal');
+        const iframe = document.getElementById('trackingFrame');
+        
+        // Hide modal
+        modal.classList.remove('active');
+        
+        // Clear iframe
+        iframe.src = '';
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+      };
+
       const formatStatus = (status) => {
         return status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown';
       };

@@ -812,25 +812,17 @@
     }
 
 
-    // init
     (async function init() {
       await loadOrders();
       await loadCoupons();
     })();
 
     window.trackOrder = function(orderId) {
-    // Example coordinates - replace with your actual data from the order
-    // You'll need to get these from your order object
     
-    // For now, let's fetch the order to get coordinates
     fetch(`${API_BASE}/orders/${orderId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(order => {
-        // Assuming your order has these fields:
-        // order.restaurantLocation.coordinates = [lng, lat]
-        // order.deliveryAddress.coordinates = [lng, lat]
-        
-        const startLat = order.restaurantLocation?.coordinates[1] || 35.7796; // Default to Raleigh
+        const startLat = order.restaurantLocation?.coordinates[1] || 35.7796;
         const startLng = order.restaurantLocation?.coordinates[0] || -78.6382;
         const endLat = order.deliveryAddress?.coordinates[1] || 35.8000;
         const endLng = order.deliveryAddress?.coordinates[0] || -78.6500;
@@ -841,7 +833,6 @@
         
         orderIdEl.textContent = `Order #${shortId(orderId)}`;
         
-        // Build URL with coordinates
         iframe.src = `/track-order.html?orderId=${orderId}startLat=${startLat}&startLng=${startLng}&endLat=${endLat}&endLng=${endLng}`;
         
         modal.classList.add('active');
