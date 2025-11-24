@@ -434,8 +434,8 @@
           <div>
             <h5 class="mb-0 fw-bold">Live Order Tracking</h5>
             <small class="text-muted" id="trackingOrderId"></small>
-          </div>
         </div>
+      </div>
         <button class="tracking-close-btn" onclick="closeTrackingModal()">×</button>
       </div>
       <div class="tracking-modal-body">
@@ -816,27 +816,63 @@
       await loadOrders();
       await loadCoupons();
     })();
+    
+    window.closeTrackingModal = function() {
+      const modal = document.getElementById('trackingModal');
+      const iframe = document.getElementById('trackingFrame');
+      
+      // Hide modal
+      modal.classList.remove('active');
+      
+      // Clear iframe
+      iframe.src = '';
+      
+      // Restore body scroll
+      document.body.style.overflow = '';
+    };
+
+    // Close modal when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('trackingModal');
+      
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            closeTrackingModal();
+          }
+        });
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('trackingModal');
+        if (modal && modal.classList.contains('active')) {
+          closeTrackingModal();
+        }
+      }
+    });
+
+    // Listen for messages from iframe
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.action === 'closeModal') {
+        closeTrackingModal();
+      }
+    });
 
     window.trackOrder = function(orderId) {
-    
-    fetch(`${API_BASE}/orders/${orderId}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(order => {
-        const modal = document.getElementById('trackingModal');
-        const iframe = document.getElementById('trackingFrame');
+      const modal = document.getElementById('trackingModal');
+      const iframe = document.getElementById('trackingFrame');
         const orderIdEl = document.getElementById('trackingOrderId');
-        
+      
         orderIdEl.textContent = `Order #${shortId(orderId)}`;
-        iframe.src = `/track-order.html?orderId=${orderId}`;
+      iframe.src = `/track-order.html?orderId=${orderId}`;
         
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      })
-      .catch(err => {
-        console.error('Failed to fetch order:', err);
-        alert('Could not load tracking information');
-      });
-  };
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
   </script>
 
 </body>
