@@ -26,6 +26,7 @@
       const [distance, setDistance] = useState(null);
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
+      const [isSimulating, setIsSimulating] = useState(false);
 
       const mapRef = useRef(null);
       const googleMapRef = useRef(null);
@@ -33,6 +34,9 @@
       const customerMarkerRef = useRef(null);
       const directionsRendererRef = useRef(null);
       const hasLoadedRef = useRef(false);
+      const routePathRef = useRef(null);
+      const simulationIntervalRef = useRef(null);
+      const currentStepRef = useRef(0);
 
       const getOrderId = () => new URLSearchParams(window.location.search).get('orderId');
 
@@ -99,11 +103,39 @@
           if (route && route.legs[0]) {
             setDistance(route.legs[0].distance.text);
             setEta(route.legs[0].duration.text);
+            // Store the path for simulation
+            routePathRef.current = route.overview_path;
+            
+            // Auto-start simulation after a short delay
+            setTimeout(() => {
+              if (routePathRef.current && routePathRef.current.length > 0) {
+                setIsSimulating(true);
+                currentStepRef.current = 0;
+
+                simulationIntervalRef.current = setInterval(() => {
+                  if (currentStepRef.current >= routePathRef.current.length) {
+                    clearInterval(simulationIntervalRef.current);
+                    setIsSimulating(false);
+                    currentStepRef.current = 0;
+                    return;
+                  }
+
+                  const nextPoint = routePathRef.current[currentStepRef.current];
+                  const newPosition = {
+                    lat: nextPoint.lat(),
+                    lng: nextPoint.lng()
+                  };
+
+                  updateDriverPosition(newPosition);
+                  currentStepRef.current++;
+                }, 200); // Adjust speed here
+              }
+            }, 1000); // Wait 1 second before starting
           }
         } catch (err) {
           console.error("Error calculating route:", err);
         }
-      }, []);
+      }, [updateDriverPosition]);
 
       const updateDriverPosition = useCallback((newLocation) => {
         if (driverMarkerRef.current) {
@@ -173,45 +205,46 @@
         };
 
         loadGoogleMaps();
-        fetchTrackingData();
+
+        return () => {
+          if (simulationIntervalRef.current) {
+            clearInterval(simulationIntervalRef.current);
+          }
+        };
       }, [fetchTrackingData]);
 
       const formatStatus = (status) => status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown';
 
-      if (loading) {
-        return (
-          <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Loading tracking data...</h2>
-              <p className="text-gray-600">Please wait while we locate your driver</p>
-            </div>
-          </div>
-        );
-      }
-
-      if (error) {
-        return (
-          <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
-              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">📦</span>
-              </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Unable to Load Tracking</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.close()}
-                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Close Window
-              </button>
-            </div>
-          </div>
-        );
-      }
-
       return (
         <div className="h-screen flex flex-col bg-gray-50">
+          {loading && (
+            <div className="absolute inset-0 z-50 bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
+                <h2 className="text-xl font-bold text-gray-800 mb-2">Loading tracking data...</h2>
+                <p className="text-gray-600">Please wait while we locate your driver</p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="absolute inset-0 z-50 bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+                <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">📦</span>
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 mb-2">Unable to Load Tracking</h2>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.parent.closeTrackingModal ? window.parent.closeTrackingModal() : window.close()}
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Close Window
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 relative">
             <div ref={mapRef} className="w-full h-full" />
 
