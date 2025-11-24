@@ -822,18 +822,12 @@
     fetch(`${API_BASE}/orders/${orderId}`, { credentials: 'include' })
       .then(res => res.json())
       .then(order => {
-        const startLat = order.restaurantLocation?.coordinates[1] || 35.7796;
-        const startLng = order.restaurantLocation?.coordinates[0] || -78.6382;
-        const endLat = order.deliveryAddress?.coordinates[1] || 35.8000;
-        const endLng = order.deliveryAddress?.coordinates[0] || -78.6500;
-        
         const modal = document.getElementById('trackingModal');
         const iframe = document.getElementById('trackingFrame');
         const orderIdEl = document.getElementById('trackingOrderId');
         
         orderIdEl.textContent = `Order #${shortId(orderId)}`;
-        
-        iframe.src = `/track-order.html?orderId=${orderId}startLat=${startLat}&startLng=${startLng}&endLat=${endLat}&endLng=${endLng}`;
+        iframe.src = `/track-order.html?orderId=${orderId}`;
         
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';

@@ -32,6 +32,7 @@
       const customerMarkerRef = useRef(null);
       const directionsRendererRef = useRef(null);
       const pollingIntervalRef = useRef(null);
+      const hasLoadedRef = useRef(false);
 
       const getOrderId = () => {
         const params = new URLSearchParams(window.location.search);
@@ -140,49 +141,44 @@
         }
 
         try {
-          // const API_BASE = window.location.origin + "/api";
+          const API_BASE = window.location.origin + "/api";
+          const orderRes = await fetch(`${API_BASE}/orders/${orderId}`, {
+            method: "GET",
+            credentials: 'include'
+          });
           
-          // const orderRes = await fetch(`${API_BASE}/orders/${orderId}`, {
-          //   credentials: 'include'
-          // });
+          console.log(orderRes)
+          if (!orderRes.ok) throw new Error("Failed to fetch order");
           
-          // if (!orderRes.ok) throw new Error("Failed to fetch order");
-          
-          // const order = await orderRes.json();
-          // setOrderData(order);
+          const order = await orderRes.json();
+          setOrderData(order);
 
           if (true) {
-            // const driverRes = await fetch(`${API_BASE}/drivers/${order.driverId}/location`, {
-            //   credentials: 'include'
-            // });
+            // const driverData = await driverRes.json();
+            // const driverLoc = {
+            //   lat: driverData.location.coordinates[1],
+            //   lng: driverData.location.coordinates[0]
+            // };
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const driverLoc = {
+              lat: 35.7796,
+              lng: -78.6382
+            };
             
-            if (true) {
-              // const driverData = await driverRes.json();
-              // const driverLoc = {
-              //   lat: driverData.location.coordinates[1],
-              //   lng: driverData.location.coordinates[0]
-              // };
-              const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-              await sleep(3000);
-              const driverLoc = {
-                lat: 35.7796,
-                lng: -78.6382
-              };
-              
-              const customerLoc = {
-                lat: 35.4,
-                lng: -79
-              };
-              
-              setDriverLocation(driverLoc);
-              if (!googleMapRef.current) {
-                initMap(driverLoc, customerLoc);
-              } else {
-                updateDriverPosition(driverLoc);
-              }
-
-              calculateRoute(driverLoc, customerLoc);
+            const customerLoc = {
+              lat: 35.4,
+              lng: -79
+            };
+            
+            setDriverLocation(driverLoc);
+            if (!googleMapRef.current) {
+              initMap(driverLoc, customerLoc);
+            } else {
+              updateDriverPosition(driverLoc);
             }
+
+            calculateRoute(driverLoc, customerLoc);
+            
           }
 
           setLoading(false);
@@ -192,24 +188,50 @@
         }
       }, [initMap, updateDriverPosition, calculateRoute]);
 
-      useEffect(() => {
-        const loadGoogleMaps = () => {
-          if (window.google) {
-            fetchTrackingData();
-            return;
-          }
 
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key={APIKEY_HERE}&libraries=geometry`;
-          script.async = true;
-          script.defer = true;
-          script.onload = () => fetchTrackingData();
-          script.onerror = () => setError("Failed to load Google Maps");
-          document.head.appendChild(script);
+      useEffect(() => {
+        if (hasLoadedRef.current) return; // Prevent re-running
+        hasLoadedRef.current = true;
+
+        const loadGoogleMaps = async () => {
+          try {
+            const API_BASE = window.location.origin + "/api";
+
+            const response = await fetch(`${API_BASE}/orders/config/maps-api-key`, {
+              method: "GET",
+              credentials: 'include'
+            });
+            const { apiKey } = await response.json();
+
+            if (window.google) {
+              console.log('Google Maps already loaded');
+              await fetchTrackingData();
+              return;
+            }
+
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
+            script.async = true;
+            script.defer = true;
+            
+            script.onload = async () => {
+              await fetchTrackingData();
+            };
+            
+            script.onerror = (error) => {
+              setError("Failed to load Google Maps");
+            };
+            
+            document.head.appendChild(script);
+            
+          } catch (error) {
+            console.error('Error in loadGoogleMaps:', error);
+            setError(error.message);
+            setLoading(false);
+          }
         };
 
         loadGoogleMaps();
-        pollingIntervalRef.current = setInterval(fetchTrackingData, 5000);
 
         return () => {
           if (pollingIntervalRef.current) {
@@ -319,23 +341,7 @@
                 </div>
                 </div>
 
-                {orderData?.driverName && (
-                <div className="bg-white rounded-xl shadow-lg p-4 pointer-events-auto">
-                    <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-lg">
-                        <span className="text-xl">👤</span>
-                        </div>
-                        <div>
-                        <p className="text-sm text-gray-600">Your Driver</p>
-                        <p className="font-semibold text-gray-800">{orderData.driverName}</p>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-                )}
-
-                {orderData?.deliveryAddress?.address && (
+                {orderData?.customerDetails?.address && (
                 <div className="bg-white rounded-xl shadow-lg p-4 pointer-events-auto">
                     <div className="flex items-start gap-3">
                     <div className="bg-red-100 p-2 rounded-lg">
@@ -344,7 +350,7 @@
                     <div>
                         <p className="text-sm text-gray-600">Delivery Address</p>
                         <p className="font-medium text-gray-800">
-                        {orderData.deliveryAddress.address}
+                        {orderData.customerDetails.address}
                         </p>
                     </div>
                     </div>
