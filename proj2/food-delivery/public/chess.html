@@ -157,46 +157,77 @@ console.log("Chessboard global:", typeof Chessboard);
       }, 1000);
     }
 
-    function onDragStart (source, piece, position, orientation) {
-      if (!game || !game.game_over()) {
-        // Only allow side to move to drag
-        const turn = game.turn();
-        if ((turn === "w" && piece.startsWith("b")) || (turn === "b" && piece.startsWith("w"))) {
-          return false;
-        }
-      }
-    }
+function onDragStart(source, piece, position, orientation) {
+  if (!game || game.game_over()) {
+    return false;
+  }
 
-    async function onDrop (source, target) {
-      if (!game) return "snapback";
+  const turn = game.turn(); // "w" or "b"
+  if (
+    (turn === "w" && piece.startsWith("b")) ||
+    (turn === "b" && piece.startsWith("w"))
+  ) {
+    return false;
+  }
 
-      const move = game.move({
-        from: source,
-        to: target,
-        promotion: "q"
-      });
+  return true;
+}
 
-      if (move === null) return "snapback";
 
-      // Compare move with puzzle solution (UCI)
-      const uciPlayed = source + target;
-      if (uciPlayed === puzzleSolution) {
-        // Correct solution
-        clearInterval(timerId);
-        timerId = null;
-        statusEl.textContent = "✅ Correct! Applying your chess discount…";
-        board.position(game.fen());
-        await finalizeChallenge(true);
-      } else {
-        wrongMove = true;
-        clearInterval(timerId);
-        timerId = null;
-        statusEl.textContent = "❌ Wrong move – challenge failed.";
-        await finalizeChallenge(false);
-      }
-    }
+function onDrop(source, target) {
+  if (!game) return "snapback";
 
-    function initBoard(fen, sideToMove) {
+  const move = game.move({
+    from: source,
+    to: target,
+    promotion: "q",
+  });
+
+  // 1) Truly illegal chess move → snap back immediately
+  if (move === null) {
+    return "snapback";
+  }
+
+  const uciPlayed = source + target; // e.g., "g2g4"
+
+  // 2) Legal chess move but NOT the puzzle solution → fail challenge
+  if (uciPlayed !== puzzleSolution) {
+    // undo in the engine so we stay at the original FEN
+    game.undo();
+
+    // reset board to the original position (no move stays on the board)
+    board.position(game.fen());
+
+    clearInterval(timerId);
+    timerId = null;
+    statusEl.textContent = "❌ Wrong move – challenge failed.";
+
+    // fire-and-forget server call; don't block the snapback
+    setTimeout(() => {
+      finalizeChallenge(false);
+    }, 0);
+
+    return "snapback";
+  }
+
+  // 3) Correct solution
+  clearInterval(timerId);
+  timerId = null;
+  statusEl.textContent = "✅ Correct! Applying your chess discount…";
+
+  // keep the correct move on the board
+  board.position(game.fen());
+
+  // send success to backend without blocking UI
+  setTimeout(() => {
+    finalizeChallenge(true);
+  }, 0);
+
+  // no snapback here – we want the move to stay
+  return;
+}
+
+function initBoard(fen, sideToMove) {
       game = new Chess(fen);
       board = Chessboard("board", {
         position: fen,

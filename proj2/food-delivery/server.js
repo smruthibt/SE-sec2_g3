@@ -110,7 +110,7 @@ import driverDashboardRoutes from './routes/driverDashboard.js';
 import paymentRouter from './routes/payments.js';
 import challengeRoutes from "./routes/challenges.js";
 import couponsRouter from "./routes/coupons.js";
-import chessChallengeRoutes from "./routes/chessChallenge.js";
+import chessChallengeRoutes from "./routes/chessChallenges.js";
 
 
 app.use("/api/restaurant-auth", restaurantAuthRouter);

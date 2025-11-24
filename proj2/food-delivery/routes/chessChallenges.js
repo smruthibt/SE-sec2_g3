@@ -19,6 +19,7 @@ function generateCouponCode(prefix = "CHESS") {
 
 // POST /api/chess-challenge/complete
 router.post("/complete", async (req, res) => {
+
   try {
     const userId = req.session.customerId;
     if (!userId) {
@@ -54,7 +55,7 @@ router.post("/complete", async (req, res) => {
 
     // If player failed, just mark status and return
     if (!success) {
-      order.challengeStatus = "failed";
+      order.challengeStatus = "FAILED";
       order.challengeType = "chess";
       order.challengeDifficulty = diffKey;
       await order.save();
@@ -68,17 +69,19 @@ router.post("/complete", async (req, res) => {
 
     const label = `Chess ${diffKey} – ${discountPercent}% off`;
 
+    let x = 42;
+
     const coupon = await Coupon.create({
       userId,
       code,
       label,
-      discountPercent,
+      discountPct: Number(discountPercent), 
       applied: false,
       expiresAt,
     });
 
     // Update order with challenge info
-    order.challengeStatus = "completed";
+    order.challengeStatus = "COMPLETED";
     order.challengeType = "chess";
     order.challengeDifficulty = diffKey;
     await order.save();
