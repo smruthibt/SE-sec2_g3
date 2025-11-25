@@ -110,6 +110,8 @@ import driverDashboardRoutes from './routes/driverDashboard.js';
 import paymentRouter from './routes/payments.js';
 import challengeRoutes from "./routes/challenges.js";
 import couponsRouter from "./routes/coupons.js";
+import recommendationsRouter from './routes/recommendations.js';
+
 
 app.use("/api/restaurant-auth", restaurantAuthRouter);
 app.use("/api/driver", driverRoutes);
@@ -123,6 +125,7 @@ app.use("/api/driver-dashboard", driverDashboardRoutes);
 app.use("/api/payments", paymentRouter);
 app.use("/api/challenges", challengeRoutes);
 app.use("/api/coupons", couponsRouter);
+app.use("/api/recommendations", recommendationsRouter);
 
 console.log("/api/orders route registered");
 
