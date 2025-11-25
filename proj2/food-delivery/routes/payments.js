@@ -64,19 +64,29 @@ router.post("/mock-checkout", async (req, res) => {
 
     const finalTotal = Math.max(subtotal + deliveryFee - discount, 0);
 
-    // Determine "seller" id (restaurant or supermarket) from first item
+    // Determine "seller" (restaurant OR supermarket) from first item
     const first = items[0];
     const firstIsSupermarket = first.sourceType === "supermarket";
-    const sellerId = firstIsSupermarket
-      ? first.supermarketItemId?.supermarketId?._id || first.supermarketId
-      : first.menuItemId?.restaurantId?._id || first.restaurantId;
+
+    // The populated seller document (Restaurant or Supermarket)
+    const sellerDoc = firstIsSupermarket
+      ? first.supermarketItemId?.supermarketId
+      : first.menuItemId?.restaurantId;
+
+    const sellerId =
+      sellerDoc?._id ||
+      (firstIsSupermarket ? first.supermarketId : first.restaurantId);
+
+    const sellerType = firstIsSupermarket ? "supermarket" : "restaurant";
+    const sellerName =
+      sellerDoc?.name || (firstIsSupermarket ? "Supermarket" : "Restaurant");
 
     // Build order items array (works for both types)
     const orderItems = items.map((i) => {
       const isSupermarket = i.sourceType === "supermarket";
       const src = isSupermarket ? i.supermarketItemId : i.menuItemId;
       return {
-        menuItemId: src?._id,          // may be MenuItem or SupermarketItem
+        menuItemId: src?._id, // may be MenuItem or SupermarketItem
         name: src?.name || "Item",
         price: src?.price || 0,
         quantity: i.quantity,
@@ -89,6 +99,8 @@ router.post("/mock-checkout", async (req, res) => {
       // For supermarket orders, this will actually be a supermarketId,
       // which is fine – it's just an ObjectId reference.
       restaurantId: sellerId,
+      sellerType,          // NEW: "restaurant" | "supermarket"
+      restaurantName: sellerName, // NEW: display name for header
       items: orderItems,
       subtotal,
       deliveryFee,
