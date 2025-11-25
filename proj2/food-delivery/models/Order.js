@@ -34,8 +34,10 @@ const orderSchema = new mongoose.Schema({
   
   challengeStatus: {
     type: String,
-    enum: ["NOT_STARTED", "COMPLETED", "FAILED"],
-    default: "NOT_STARTED"
+  enum: [
+    "NOT_STARTED", "COMPLETED", "FAILED",
+    "not_started", "completed", "failed"
+  ],    default: "NOT_STARTED"
   },
   appliedCode: { type: String, default: null },
 

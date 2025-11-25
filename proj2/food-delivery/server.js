@@ -110,19 +110,24 @@ import driverDashboardRoutes from './routes/driverDashboard.js';
 import paymentRouter from './routes/payments.js';
 import challengeRoutes from "./routes/challenges.js";
 import couponsRouter from "./routes/coupons.js";
+import chessChallengeRoutes from "./routes/chessChallenges.js";
 
-app.use("/api/restaurant-auth", restaurantAuthRouter);
+// API routes
+app.use('/api/restaurants', restaurantRouter);
+app.use('/api/menu', menuRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/orders', orderRouter);
+
+app.use('/api/restaurant-auth', restaurantAuthRouter);
 app.use("/api/driver", driverRoutes);
-app.use("/api/restaurants", restaurantRouter);
-app.use("/api/menu", menuRouter);
-app.use("/api/cart", cartRouter);
-app.use("/api/orders", orderRouter);
-app.use("/api/customer-auth", customerAuthRouter);
-app.use("/api/restaurant-dashboard", restaurantDashboardRouter);
-app.use("/api/driver-dashboard", driverDashboardRoutes);
-app.use("/api/payments", paymentRouter);
+app.use('/api/customer-auth', customerAuthRouter);
+app.use('/api/restaurant-dashboard', restaurantDashboardRouter);
+
+app.use('/api/driver', driverDashboardRoutes);
+app.use('/api/payments', paymentRouter);
 app.use("/api/challenges", challengeRoutes);
-app.use("/api/coupons", couponsRouter);
+app.use("/api/coupons", couponsRouter);   // existing coding challenge
+app.use("/api/chess-challenge", chessChallengeRoutes); // NEW chess challenge
 
 console.log("/api/orders route registered");
 
