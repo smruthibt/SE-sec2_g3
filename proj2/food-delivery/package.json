@@ -11,6 +11,7 @@
     "seed:admins": "node seed/seed_admins.js",
     "seed:demo6": "node seed/seed_demo6.js",
     "seed:demo6:admins": "node seed/seed_demo6_admins.js",
+    "seed:supermarkets": "node seed/seed_supermarkets.js",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --config jest.config.mjs",
     "test:cov": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --config jest.config.mjs --coverage",
     "test:e2e": "playwright test",

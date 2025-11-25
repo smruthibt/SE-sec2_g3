@@ -1,6 +1,7 @@
 import express from "express";
 import CartItem from "../models/CartItem.js";
 import MenuItem from "../models/MenuItem.js";
+import SupermarketItem from "../models/SupermarketItem.js";
 
 const router = express.Router();
 

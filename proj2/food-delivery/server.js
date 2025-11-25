@@ -111,6 +111,8 @@ import paymentRouter from './routes/payments.js';
 import challengeRoutes from "./routes/challenges.js";
 import couponsRouter from "./routes/coupons.js";
 import chessChallengeRoutes from "./routes/chessChallenges.js";
+import supermarketRouter from './routes/supermarkets.js';
+import supermarketMenuRouter from './routes/supermarketMenu.js';
 
 // API routes
 app.use('/api/restaurants', restaurantRouter);
@@ -128,6 +130,13 @@ app.use('/api/payments', paymentRouter);
 app.use("/api/challenges", challengeRoutes);
 app.use("/api/coupons", couponsRouter);   // existing coding challenge
 app.use("/api/chess-challenge", chessChallengeRoutes); // NEW chess challenge
+
+// NEW supermarket endpoints
+app.use('/api/supermarkets', supermarketRouter);
+app.use('/api/supermarket-menu', supermarketMenuRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/orders', orderRouter);
+
 
 console.log("/api/orders route registered");
 
