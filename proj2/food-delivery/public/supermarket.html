@@ -282,6 +282,7 @@
     const itemsGrid = document.getElementById("itemsGrid");
     const emptyState = document.getElementById("emptyState");
     const itemsCountEl = document.getElementById("itemsCount");
+    let currentMarket = null;
 
     function getQueryId() {
       const params = new URLSearchParams(window.location.search);
@@ -371,6 +372,7 @@
     }
 
     function renderMarket(market) {
+      currentMarket = market; // 👈 remember which supermarket we’re on
       marketNameEl.textContent = market.name || "Supermarket";
       heroImage.src = market.imageUrl || "/assets/placeholder-restaurant.jpg";
 
@@ -443,7 +445,10 @@
               <div class="item-footer">
                 <div class="fw-semibold">$${price}</div>
                 <!-- Cart wiring can be added later -->
-                <button class="btn btn-sm btn-outline-success" type="button" disabled title="Cart support coming soon">
+                <button
+                  class="btn btn-sm btn-outline-success"
+                  type="button"
+                  data-add-supermarket="${it._id}">
                   Add
                 </button>
               </div>
@@ -452,6 +457,13 @@
         `;
         itemsGrid.appendChild(col);
       }
+      // Attach click handler to "Add" buttons
+      itemsGrid.querySelectorAll("[data-add-supermarket]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const itemId = btn.getAttribute("data-add-supermarket");
+          await addToCartSupermarket(itemId, 1);
+        });
+      });
     }
 
     async function loadMarketAndItems() {
@@ -491,6 +503,43 @@
         console.error("Error loading supermarket page:", err);
         emptyState.classList.remove("d-none");
         emptyState.textContent = "Something went wrong. Please try again.";
+      }
+    }
+
+    async function addToCartSupermarket(supermarketItemId, quantity) {
+      if (!currentMarket || !currentMarket._id) {
+        console.warn("No current supermarket set");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/cart`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            sourceType: "supermarket",
+            supermarketItemId,
+            supermarketId: currentMarket._id,
+            quantity,
+          }),
+        });
+
+        if (res.status === 401) {
+          window.location.href = "/customer-login.html";
+          return;
+        }
+
+        // Optional: you could show a toast like restaurant.html
+        if (!res.ok) {
+          console.error("Failed to add supermarket item:", await res.text());
+          return;
+        }
+
+        // Update the cart badge
+        updateCartCount();
+      } catch (err) {
+        console.error("Error adding supermarket item to cart:", err);
       }
     }
 
