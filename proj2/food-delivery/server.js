@@ -110,6 +110,8 @@ import driverDashboardRoutes from './routes/driverDashboard.js';
 import paymentRouter from './routes/payments.js';
 import challengeRoutes from "./routes/challenges.js";
 import couponsRouter from "./routes/coupons.js";
+import recommendationsRouter from './routes/recommendations.js';
+
 import chessChallengeRoutes from "./routes/chessChallenges.js";
 import supermarketRouter from './routes/supermarkets.js';
 import supermarketMenuRouter from './routes/supermarketMenu.js';
@@ -129,6 +131,8 @@ app.use('/api/restaurant-dashboard', restaurantDashboardRouter);
 app.use('/api/driver', driverDashboardRoutes);
 app.use('/api/payments', paymentRouter);
 app.use("/api/challenges", challengeRoutes);
+app.use("/api/coupons", couponsRouter);
+app.use("/api/recommendations", recommendationsRouter);
 app.use("/api/coupons", couponsRouter);   // existing coding challenge
 app.use("/api/chess-challenge", chessChallengeRoutes); // NEW chess challenge
 

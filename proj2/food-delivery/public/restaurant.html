@@ -31,6 +31,39 @@
     .head-card{ border:1px solid #eaeaea; border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 16px 32px rgba(0,0,0,.08); }
     .head-img{ width:100%; height:100%; object-fit:cover; min-height:220px; }
 
+    /* NEW: horizontal scroll row */
+    .reco-scroll {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 0.25rem;
+      scrollbar-width: thin;
+    }
+    /* WebKit scrollbar styling */
+    .reco-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .reco-scroll::-webkit-scrollbar-thumb {
+      background: #999;
+      border-radius: 4px;
+    }
+
+    .reco-scroll::-webkit-scrollbar-track {
+      background: #eee;
+    }
+    .reco-card {
+      flex: 0 0 220px; /* fixed width for each card */
+      scroll-snap-align: start;
+    }
+    .reco-title {
+      color: white;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+
     /* Menu cards */
     .menu-card{ height:100%; border:1px solid #eaeaea; border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 12px 24px rgba(0,0,0,.06); }
     .menu-img{ width:100%; height:140px; object-fit:cover; }
@@ -75,6 +108,8 @@
 
   <main class="container py-4">
     <div id="header" class="mb-4"></div>
+     <!-- NEW: Recommended items row -->
+    <div id="recommendations" class="mb-4"></div>
     <div id="menu" class="row g-3"></div>
   </main>
 
@@ -248,6 +283,88 @@
       );
     }
 
+    function renderRecommendedCard(item) {
+      const safeImg = item.imageUrl || 'https://via.placeholder.com/800x600?text=Item';
+      const price = `$${(Number(item.price) || 0).toFixed(2)}`;
+      const desc = (item.description || '').slice(0, 60) + (item.description && item.description.length > 60 ? '…' : '');
+
+      return `
+        <div class="reco-card">
+          <div class="menu-card h-100">
+            <img class="menu-img" src="${safeImg}"
+                alt="${item.name || 'Item'}"
+                onerror="this.src='https://via.placeholder.com/800x600?text=Item'">
+            <div class="p-3 content">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <div class="menu-title">${item.name || 'Item'}</div>
+                <div class="fw-bold money">${price}</div>
+              </div>
+              <div class="text-secondary small mb-2">${desc}</div>
+              <div class="actions">
+                <button class="btn btn-sm btn-success"
+                    onclick="addToCart('${item._id}', '${item.restaurantId}', 1)">
+                Add to cart
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
+
+    async function renderRecommendations() {
+    const container = document.getElementById('recommendations');
+    if (!container || !restaurantId) return;
+
+    container.innerHTML = `
+      <div class="menu-card p-3">
+        <span class="text-secondary">Loading recommendations…</span>
+      </div>
+    `;
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/recommendations/menu?restaurantId=${encodeURIComponent(restaurantId)}&limit=10`,
+        { credentials: 'include' }
+      );
+
+      if (res.status === 401) {
+        // user not logged in → hide recommendations
+        container.innerHTML = '';
+        return;
+      }
+
+      if (!res.ok) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const data = await res.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+
+      if (!items.length) {
+        // Hide the entire section cleanly
+        container.style.display = "none";
+        return;
+      }
+
+      // If items exist, show the section
+      container.style.display = "block";
+
+      container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0 reco-title">Recommended for you</h5>
+        </div>
+
+        <div class="reco-scroll">
+          ${items.map(renderRecommendedCard).join('')}
+        </div>
+      `;
+    } catch (err) {
+      console.error('Failed to load recommendations', err);
+      container.innerHTML = '';
+      }
+    }
     async function renderMenu(){
       const grid = document.getElementById('menu');
       grid.innerHTML = `
@@ -326,6 +443,8 @@
       }
       const r = await rRes.json();
       renderOldHeader(r);
+      // NEW: show personalized recommendations first
+      await renderRecommendations();
       await renderMenu();
       updateCartCount();
 

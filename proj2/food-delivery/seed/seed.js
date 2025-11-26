@@ -106,6 +106,33 @@ function randomAddress(){
   const zip=27600+Math.floor(rnd()*99);
   return `${100+Math.floor(rnd()*900)} ${pick(streets)}, ${pick(cities)}, NC ${zip}`;
 }
+
+function inferCategoryFromName(name) {
+  const lower = String(name || '').toLowerCase();
+
+  if (lower.includes('cake') || lower.includes('ice cream') ||
+      lower.includes('brownie') || lower.includes('pudding') ||
+      lower.includes('tiramisu') || lower.includes('dessert')) {
+    return 'dessert';
+  }
+
+  if (lower.includes('soup') || lower.includes('salad') ||
+      lower.includes('starter') || lower.includes('fries') ||
+      lower.includes('nuggets') || lower.includes('sticks')) {
+    return 'starter';
+  }
+
+  if (lower.includes('juice') || lower.includes('soda') ||
+      lower.includes('cola') || lower.includes('coffee') ||
+      lower.includes('tea') || lower.includes('shake')) {
+    return 'drink';
+  }
+
+  // fall back: assume it’s a main course / heavy dish
+  return 'main';
+}
+
+
 function cuisineItem(cuisine){
   const pool=cuisineDishes[cuisine] || ["Chef Special"];
   const baseName=pick(pool);
@@ -239,7 +266,9 @@ async function main(){
       description: m.description,
       price: m.price,
       imageUrl: m.imageUrl,
-      isAvailable: true
+      isAvailable: true,
+      // NEW
+      category: inferCategoryFromName(m.name)
     })));
 
     process.stdout.write(`  • ${name} (${cuisine}) — ${menu.length} items\n`);

@@ -6,7 +6,10 @@ const menuItemSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   price: { type: Number, required: true },
   imageUrl: { type: String },
-  isAvailable: { type: Boolean, default: true }  
+  isAvailable: { type: Boolean, default: true },
+
+  // NEW: simple category tag to help recommendations
+  category: { type: String, enum: ['starter', 'main', 'dessert', 'drink', 'side'], default: 'main' }
 }, { timestamps: true });
 
 export default mongoose.model('MenuItem', menuItemSchema);
