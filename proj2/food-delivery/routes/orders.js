@@ -4,7 +4,9 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import CartItem from "../models/CartItem.js";
 import Restaurant from "../models/Restaurant.js";
-import MenuItem from "../models/MenuItem.js";   // correct relative path
+import MenuItem from "../models/MenuItem.js";
+import Supermarket from "../models/Supermarket.js";
+import SupermarketItem from "../models/SupermarketItem.js";
 import Coupon from "../models/Coupon.js";
 
 const router = express.Router();
@@ -12,6 +14,7 @@ const router = express.Router();
 /**
  * GET /api/orders
  * Fetch all orders for the logged-in customer
+ * Fully supermarket + restaurant compatible
  */
 router.get("/", async (req, res) => {
   try {
@@ -21,15 +24,30 @@ router.get("/", async (req, res) => {
     }
 
     const orders = await Order.find({ userId: customerId })
-      .populate("items.menuItemId")
+      .populate("items.menuItemId") // Works for Restaurant MenuItems + SupermarketItems
       .sort({ createdAt: -1 })
       .lean();
 
+    // ---- Fill in missing seller names if the order was created before patch ----
+    for (const o of orders) {
+      if (!o.restaurantName && o.restaurantId) {
+        if (o.sellerType === "supermarket") {
+          const sm = await Supermarket.findById(o.restaurantId).lean();
+          o.restaurantName = sm?.name || "Supermarket";
+        } else {
+          const r = await Restaurant.findById(o.restaurantId).lean();
+          o.restaurantName = r?.name || "Restaurant";
+        }
+      }
+    }
+
     const enriched = orders.map((o) => ({
       ...o,
+      sellerType: o.sellerType || "restaurant", // Default fallback
+      restaurantName: o.restaurantName || "Restaurant",
       challengeStatus: o.challengeStatus || "NOT_STARTED",
       appliedCode: o.appliedCode || null,
-      discount: o.discount ?? 0,     // ✅ Ensure always included
+      discount: o.discount ?? 0,
       deliveryFee: o.deliveryFee ?? 0,
       subtotal: o.subtotal ?? 0,
       total: o.total ?? 0,
@@ -43,7 +61,8 @@ router.get("/", async (req, res) => {
 
 /**
  * POST /api/orders
- * Place a new order (optionally for selected cart items via { itemIds })
+ * Place a new order (restaurant flow only)
+ * (Supermarket orders now go through payments.js)
  */
 router.post("/", async (req, res) => {
   try {
@@ -52,10 +71,9 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Customer not logged in" });
     }
 
-    // Optional subset: { itemIds: [...] }
+    // Optional subset via { itemIds }
     let itemIds = Array.isArray(req.body?.itemIds) ? req.body.itemIds : null;
     if (itemIds && itemIds.length) {
-      // safely cast to ObjectIds
       itemIds = itemIds
         .filter(Boolean)
         .map((id) => {
@@ -72,7 +90,6 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // Build query: all items vs only selected ones
     const cartQuery = itemIds?.length
       ? { userId: customerId, _id: { $in: itemIds } }
       : { userId: customerId };
@@ -84,11 +101,11 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // 🧩 Fetch authoritative menu data (both available & unavailable)
+    // Restaurant flow → only menuItemId is relevant
     const menuIds = cartItems.map((ci) => ci.menuItemId);
     const allMenuItems = await MenuItem.find({ _id: { $in: menuIds } }).lean();
 
-    // 🛑 Detect unavailable/out-of-stock items (support both flags)
+    // Detect unavailable items
     const unavailableItems = allMenuItems.filter(
       (m) => m?.isAvailable === false || m?.inStock === false
     );
@@ -100,11 +117,12 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // ✅ Only keep available items
-    const menuItems = allMenuItems.filter((m) => m?.isAvailable !== false && m?.inStock !== false);
+    const menuItems = allMenuItems.filter(
+      (m) => m?.isAvailable !== false && m?.inStock !== false
+    );
     const menuMap = new Map(menuItems.map((m) => [String(m._id), m]));
 
-    // Derive restaurant IDs from menu items
+    // Restaurant enforcement
     const restIdSet = new Set(
       cartItems
         .map((ci) => {
@@ -118,7 +136,9 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Unable to determine restaurant for selected items" });
     }
     if (restIdSet.size > 1) {
-      return res.status(400).json({ error: "Selected items must be from a single restaurant" });
+      return res.status(400).json({
+        error: "Selected items must be from a single restaurant",
+      });
     }
 
     const restaurantId = [...restIdSet][0];
@@ -127,7 +147,7 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ error: "Restaurant not found" });
     }
 
-    // ✅ Build order lines and compute totals
+    // Build order lines
     let subtotal = 0;
     const items = cartItems.map((ci) => {
       const mi = menuMap.get(String(ci.menuItemId));
@@ -145,6 +165,7 @@ router.post("/", async (req, res) => {
 
     const deliveryFee = Number(restaurant.deliveryFee ?? 0);
 
+    // Auto-apply best coupon
     let discount = 0;
     let appliedCode = null;
     try {
@@ -167,10 +188,12 @@ router.post("/", async (req, res) => {
 
     const total = subtotal + deliveryFee - discount;
 
-    // ✅ Create order document
+    // Create the order
     const order = await Order.create({
       userId: customerId,
       restaurantId,
+      sellerType: "restaurant",
+      restaurantName: restaurant.name, // ensure name always stored
       items,
       subtotal,
       deliveryFee,
@@ -181,7 +204,7 @@ router.post("/", async (req, res) => {
       paymentStatus: "paid",
     });
 
-    // 🧹 Clear checked-out items from cart
+    // Clear cart items
     if (itemIds?.length) {
       await CartItem.deleteMany({ userId: customerId, _id: { $in: itemIds } });
     } else {
@@ -194,7 +217,11 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// DELETE /api/orders -> delete ALL orders for current customer
+
+/**
+ * DELETE /api/orders
+ * Clear all orders
+ */
 router.delete("/", async (req, res) => {
   try {
     const customerId = req.session.customerId;
@@ -207,7 +234,10 @@ router.delete("/", async (req, res) => {
   }
 });
 
-// DELETE /api/orders/:id -> delete ONE order (owned by current customer)
+/**
+ * DELETE /api/orders/:id
+ * Remove a single order
+ */
 router.delete("/:id", async (req, res) => {
   try {
     const customerId = req.session.customerId;
@@ -215,9 +245,10 @@ router.delete("/:id", async (req, res) => {
 
     const { id } = req.params;
     const result = await Order.deleteOne({ _id: id, userId: customerId });
-    if (result.deletedCount === 0) {
+    if (!result.deletedCount) {
       return res.status(404).json({ error: "Order not found" });
     }
+
     return res.json({ ok: true, message: "Order deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
