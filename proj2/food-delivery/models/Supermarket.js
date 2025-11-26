@@ -11,6 +11,9 @@ const supermarketSchema = new mongoose.Schema({
   etaMins: { type: Number, default: 30 },
 
   address: { type: String, required: true },
+   ownerEmail: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  passwordHash: { type: String, required: true },
+
 
   // Optional tags or categories to filter
   tags: [{ type: String }]
