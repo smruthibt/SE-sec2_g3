@@ -7,7 +7,7 @@ const router = express.Router();
 //Register new customer
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, favoriteDishes, dietRequirements, address } = req.body;
+    const { name, email, password, favoriteDishes, dietRequirements, address, coordinates } = req.body;
     if (!name || !email || !password || !address)
       return res.status(400).json({ error: 'name, email, password, and address required' });
 
@@ -21,7 +21,8 @@ router.post('/register', async (req, res) => {
       passwordHash,
       favoriteDishes,
       dietRequirements,
-      address
+      address,
+      coordinates
     });
 
     //Start session

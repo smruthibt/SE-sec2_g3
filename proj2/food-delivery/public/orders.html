@@ -226,6 +226,73 @@
       text-decoration: underline;
       color: #0e0e0e;
     }
+
+    .tracking-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .tracking-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tracking-modal-content {
+      width: 95%;
+      height: 90%;
+      max-width: 1200px;
+      max-height: 800px;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tracking-modal-header {
+      padding: 16px 24px;
+      background: white;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tracking-modal-body {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tracking-close-btn {
+      background: none;
+      border: none;
+      font-size: 32px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .tracking-close-btn:hover {
+      background: #f3f3f3;
+      color: #000;
+    }
   </style>
 </head>
 
@@ -357,9 +424,30 @@
       </div>
     </div>
   </footer>
-<script>
-  document.getElementById("yearFooter").textContent = new Date().getFullYear();
-</script>
+  <div id="trackingModal" class="tracking-modal">
+    <div class="tracking-modal-content">
+      <div class="tracking-modal-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-green-100 p-2 rounded-lg">
+            <span style="font-size: 24px;">🚗</span>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold">Live Order Tracking</h5>
+            <small class="text-muted" id="trackingOrderId"></small>
+        </div>
+      </div>
+        <button class="tracking-close-btn" onclick="closeTrackingModal()">×</button>
+      </div>
+      <div class="tracking-modal-body">
+        <iframe id="trackingFrame" style="width: 100%; height: 100%; border: none;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("yearFooter").textContent = new Date().getFullYear();
+  </script>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -522,38 +610,41 @@
             </table>
           </div>
 
-          <div class="row g-3 mt-3">
-            <div class="col-12 col-md-6"></div>
-            <div class="col-12 col-md-6">
-              <div class="summary-card p-3">
-                <div class="d-flex justify-content-between">
-                  <span class="text-secondary">Subtotal</span>
-                  <span class="money">${money(o.subtotal)}</span>
-                </div>
-                <div class="d-flex justify-content-between mt-1">
-                  <span class="text-secondary">Delivery</span>
-                  <span class="money">${money(o.deliveryFee)}</span>
-                </div>
-                ${o.discount > 0 ? `
-                <div class="d-flex justify-content-between text-success">
-                  <span>Discount (${o.appliedCode || "Coupon"})</span>
-                  <span>–$${o.discount.toFixed(2)}</span>
-                </div>` : ""}
-                <div class="d-flex justify-content-between mt-2">
-                  <span class="fw-semibold">Total</span>
-                  <span class="fw-bold money">${money(o.total)}</span>
-                </div>
+        <div class="row g-3 mt-3">
+          <div class="col-12 col-md-6"></div>
+          <div class="col-12 col-md-6">
+            <div class="summary-card p-3">
+              <div class="d-flex justify-content-between">
+                <span class="text-secondary">Subtotal</span>
+                <span class="money">${money(o.subtotal)}</span>
               </div>
-              ${cashbackBanner}
-              <div class="d-flex gap-2 mt-2">
-                <button class="btn btn-outline-secondary btn-sm" data-reorder="${o._id}">Order again</button>
-                <button class="btn btn-outline-primary btn-sm" onclick="copyOrderId('${o._id}')">Copy ID</button>
+              <div class="d-flex justify-content-between mt-1">
+                <span class="text-secondary">Delivery</span>
+                <span class="money">${money(o.deliveryFee)}</span>
               </div>
+              ${o.discount > 0 ? `
+              <div class="d-flex justify-content-between text-success">
+                <span>Discount (${o.appliedCode || "Coupon"})</span>
+                <span>–$${o.discount.toFixed(2)}</span>
+              </div>` : ""}
+              <div class="d-flex justify-content-between mt-2">
+                <span class="fw-semibold">Total</span>
+                <span class="fw-bold money">${money(o.total)}</span>
+              </div>
+            </div>
+            ${cashbackBanner}
+            <div class="d-flex gap-2 mt-2">
+              <button class="btn btn-outline-secondary btn-sm" data-reorder="${o._id}">Order again</button>
+              <button class="btn btn-outline-primary btn-sm" onclick="copyOrderId('${o._id}')">Copy ID</button>
+              ${["out_for_delivery", "enroute"].includes(String(o.status || "").toLowerCase()) 
+                ? `<button class="btn btn-success btn-sm" onclick="trackOrder('${o._id}')">🗺️ Track Order</button>` 
+                : ''}
             </div>
           </div>
         </div>
-      </div>`;
-  }
+      </div>
+    </div>`;
+    }
 
   async function reorderOrder(order) {
     try {
@@ -780,11 +871,68 @@
     }
   }
 
-  // init
-  (async function init() {
-    await loadOrders();
-    await loadCoupons();
-  })();
-</script>
+    (async function init() {
+      await loadOrders();
+      await loadCoupons();
+    })();
+    
+    window.closeTrackingModal = function() {
+      const modal = document.getElementById('trackingModal');
+      const iframe = document.getElementById('trackingFrame');
+      
+      // Hide modal
+      modal.classList.remove('active');
+      
+      // Clear iframe
+      iframe.src = '';
+      
+      // Restore body scroll
+      document.body.style.overflow = '';
+    };
+
+    // Close modal when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('trackingModal');
+      
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            closeTrackingModal();
+          }
+        });
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('trackingModal');
+        if (modal && modal.classList.contains('active')) {
+          closeTrackingModal();
+        }
+      }
+    });
+
+    // Listen for messages from iframe
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.action === 'closeModal') {
+        closeTrackingModal();
+      }
+    });
+
+    window.trackOrder = function(orderId) {
+      const modal = document.getElementById('trackingModal');
+      const iframe = document.getElementById('trackingFrame');
+        const orderIdEl = document.getElementById('trackingOrderId');
+      
+        orderIdEl.textContent = `Order #${shortId(orderId)}`;
+      iframe.src = `/track-order.html?orderId=${orderId}`;
+        
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    };
+
+  </script>
+
 </body>
 </html>

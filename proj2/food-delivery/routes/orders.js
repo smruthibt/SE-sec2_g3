@@ -8,6 +8,7 @@ import MenuItem from "../models/MenuItem.js";
 import Supermarket from "../models/Supermarket.js";
 import SupermarketItem from "../models/SupermarketItem.js";
 import Coupon from "../models/Coupon.js";
+import customerAuth from "../models/CustomerAuth.js"
 
 const router = express.Router();
 
@@ -256,3 +257,56 @@ router.delete("/:id", async (req, res) => {
 });
 
 export default router;
+
+
+router.get("/:orderId", async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    
+    const order = await Order.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(orderId) }
+      },
+      {
+        $lookup: {
+          from: "customerauths",  // Collection name (lowercase, pluralized)
+          localField: "userId",  // Field in Order
+          foreignField: "_id",  // Field in CustomerAuth
+          as: "customerDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "restaurants",  // Collection name (lowercase, pluralized)
+          localField: "restaurantId",  // Field in Order
+          foreignField: "_id",  // Field in RestaurantAuth
+          as: "restaurantDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$customerDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: "$restaurantDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      }
+    ]);
+    
+    if (!order || order.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json(order[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/config/maps-api-key', (req, res) => {
+  res.json({ apiKey: process.env.MAPS_PLATFORM_API_KEY });
+});

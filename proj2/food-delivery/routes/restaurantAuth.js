@@ -8,7 +8,7 @@ const norm = (e) => (e || '').trim().toLowerCase();
 //Register new restaurant + admin
 router.post('/register', async (req, res) => {
   try {
-    let { name, cuisine, email, password, address } = req.body || {};
+    let { name, cuisine, email, password, address, coordinates } = req.body || {};
     if (!name || !cuisine || !email || !password || !address)
       return res.status(400).json({ error: 'name, cuisine, email, password and address required' });
     const e = norm(email);
@@ -21,7 +21,8 @@ router.post('/register', async (req, res) => {
       rating: 4.5,
       deliveryFee: 0,
       etaMins: 30,
-      address
+      address,
+      coordinates
     });
 
     const passwordHash = await bcrypt.hash(password, 10);
