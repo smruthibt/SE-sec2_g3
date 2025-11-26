@@ -276,12 +276,28 @@
 
   <main class="container py-4">
     <!-- SEARCH -->
-    <div class="search-wrap mb-4">
+    <div class="search-wrap mb-2">
       <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path d="M21 21l-4.3-4.3M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#000" stroke-opacity=".4"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-      <input id="search" class="form-control" placeholder="Search restaurants or cuisine…">
+      <input id="search" class="form-control" placeholder="Search restaurants or supermarkets…">
+    </div>
+
+    <!-- NEW: Restaurants / Supermarkets tab -->
+    <div class="mb-4">
+      <div id="storeTabs" class="btn-group" role="group" aria-label="Store type">
+        <button type="button"
+                class="btn btn-outline-dark active"
+                data-mode="restaurants">
+          Restaurants
+        </button>
+        <button type="button"
+                class="btn btn-outline-dark"
+                data-mode="supermarkets">
+          Supermarkets
+        </button>
+      </div>
     </div>
 
     <!-- SECTION HEADER -->
@@ -305,6 +321,16 @@
     const toggleBtn = document.getElementById('toggleViewBtn');
     const cartCountEl = document.getElementById('cartCount');
 
+    // NEW: mode constants for restaurants vs supermarkets
+    const MODE_RESTAURANTS = 'restaurants';
+    const MODE_SUPERMARKETS = 'supermarkets';
+    let activeMode = MODE_RESTAURANTS;
+
+    const tabsContainer = document.getElementById('storeTabs');
+    const tabButtons = tabsContainer
+      ? tabsContainer.querySelectorAll('[data-mode]')
+      : [];
+
     // set footer year once DOM is ready
     window.addEventListener('DOMContentLoaded', () => {
       const yearFooterEl = document.getElementById('yearFooter');
@@ -313,7 +339,7 @@
       }
     });
 
-    let allRestaurants = [];
+    let allRestaurants = []; // now "all places" for the active mode
     let showAll = false;
 
     function showGridMessage(text) {
@@ -321,12 +347,21 @@
     }
 
     async function fetchRestaurants(query = "") {
+      // Decide which endpoint to hit based on current tab
+      const resource = (activeMode === MODE_RESTAURANTS)
+        ? 'restaurants'
+        : 'supermarkets';
+
+      const label = (activeMode === MODE_RESTAURANTS)
+        ? 'restaurants'
+        : 'supermarkets';
+
       const params = query ? ('?q=' + encodeURIComponent(query)) : '';
       try {
-        const res = await fetch(`${API_BASE}/restaurants${params}`, { credentials: 'include' });
+        const res = await fetch(`${API_BASE}/${resource}${params}`, { credentials: 'include' });
         if (!res.ok) {
-          console.warn('Failed to load restaurants', res.status);
-          showGridMessage('Could not load restaurants. Try again.');
+          console.warn(`Failed to load ${label}`, res.status);
+          showGridMessage(`Could not load ${label}. Try again.`);
           return [];
         }
         const data = await res.json();
@@ -347,7 +382,10 @@
       const list = showAll ? restaurants : restaurants.slice(0, 10);
 
       if (!list.length) {
-        showGridMessage('No restaurants found.');
+        const label = (activeMode === MODE_RESTAURANTS)
+          ? 'restaurants'
+          : 'supermarkets';
+        showGridMessage(`No ${label} found.`);
         toggleBtn.style.visibility = 'hidden';
         return;
       }
@@ -360,8 +398,14 @@
         const rating = (typeof r.rating === 'number') ? r.rating.toFixed(1) : (r.rating || '4.6');
         const img = r.imageUrl || '/assets/placeholder-restaurant.jpg';
 
+        // Decide target page based on active mode
+        const detailHref =
+          (activeMode === MODE_RESTAURANTS)
+            ? `/restaurant.html?id=${encodeURIComponent(r._id)}`
+            : `/supermarket.html?id=${encodeURIComponent(r._id)}`;
+
         col.innerHTML = `
-          <a href="/restaurant.html?id=${encodeURIComponent(r._id)}"
+          <a href="${detailHref}"
              class="text-decoration-none text-reset">
             <div class="restaurant-card">
               <img class="thumb"
@@ -375,7 +419,7 @@
                   <div class="text-muted small">⭐ ${rating}</div>
                 </div>
                 <div class="meta">
-                  ${r.cuisine || 'Food'} • $${fee} delivery
+                  ${(r.cuisine || r.description || 'Food')} • $${fee} delivery
                 </div>
               </div>
             </div>
@@ -409,6 +453,28 @@
     toggleBtn.addEventListener('click', () => {
       showAll = !showAll;
       render(allRestaurants);
+    });
+
+    // NEW: tab switching logic
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const mode = btn.getAttribute('data-mode');
+        if (!mode || mode === activeMode) return;
+
+        activeMode = mode;
+
+        // update button visual "active" state
+        tabButtons.forEach(b => {
+          b.classList.toggle('active', b === btn);
+        });
+
+        // reload data for new mode
+        const q = searchInput.value.trim();
+        const data = await fetchRestaurants(q);
+        allRestaurants = data;
+        showAll = false;
+        render(allRestaurants);
+      });
     });
 
     // Cart badge
@@ -549,12 +615,6 @@
                 <i class="bi bi-instagram fs-4"></i>
               </a>
             </li>
-            <!-- <li>
-              <a class="link-muted" href="https://x.com/bitecode" target="_blank" aria-label="Twitter/X"
-                title="Twitter/X">
-                <i class="bi bi-twitter-x fs-4"></i>
-              </a>
-            </li> -->
             <li>
               <a class="link-muted" href="https://www.facebook.com/profile.php?id=61583523866090" target="_blank" aria-label="Facebook"
                 title="Facebook">

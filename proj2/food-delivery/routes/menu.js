@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
     if (!name || !price || !restaurantId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const newItem = new MenuItem({ name, price, restaurantId, description });
+    const newItem = new MenuItem({ name, price, restaurantId, description, category });
     const saved = await newItem.save();
     res.status(201).json({
       message: "Menu item created successfully",

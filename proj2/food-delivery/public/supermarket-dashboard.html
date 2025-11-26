@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Restaurant Dashboard • bitecode</title>
+  <title>Supermarket Dashboard • bitecode</title>
 
   <!-- Bootstrap + Fonts -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -26,12 +26,13 @@
 
     body {
       background: linear-gradient(to bottom, rgba(255, 255, 255, 0.0), rgba(255, 255, 255, 0.25)),
-        url('https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=2400&auto=format&fit=crop');
+        url('https://images.unsplash.com/photo-1580915411954-282cb1c9c450?q=80&w=2400&auto=format&fit=crop');
       background-size: cover;
       background-position: center;
       position: relative;
     }
 
+    /* Dark translucent overlay spanning entire viewport */
     body::before {
       content: "";
       position: fixed;
@@ -40,6 +41,7 @@
       z-index: 0;
     }
 
+    /* Navbar */
     .navbar {
       background: rgba(255, 255, 255, 0.9) !important;
       backdrop-filter: blur(8px);
@@ -48,6 +50,7 @@
       z-index: 3;
     }
 
+    /* Main fills space between navbar and footer */
     main.wrap {
       flex: 1 0 auto;
       position: relative;
@@ -58,6 +61,7 @@
       padding: 40px 16px;
     }
 
+    /* Dashboard card */
     .card {
       width: 100%;
       max-width: 1100px;
@@ -119,6 +123,12 @@
       text-decoration: line-through;
     }
 
+    .badge,
+    .btn {
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Footer always at the bottom */
     footer {
       flex-shrink: 0;
       background: rgba(255, 255, 255, 0.9);
@@ -127,6 +137,17 @@
       z-index: 2;
     }
 
+    footer .link-muted {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    footer .link-muted:hover {
+      text-decoration: underline;
+      color: #0e0e0e;
+    }
+
+    /* Logo sizing */
     .brand-logo {
       height: 100px;
       width: auto;
@@ -141,7 +162,6 @@
 </head>
 
 <body>
-
   <!-- NAV -->
   <nav class="navbar sticky-top">
     <div class="container py-2">
@@ -150,20 +170,24 @@
       </a>
 
       <div class="d-flex align-items-center gap-3 ms-auto">
+        <!-- Dynamic welcome text -->
         <span id="welcomePill" class="text-muted small"></span>
+
+        <!-- Dynamic auth button -->
         <a id="authButton" class="btn btn-outline-secondary btn-sm rounded-pill" href="#">Sign in</a>
       </div>
     </div>
   </nav>
 
+
   <main class="container py-5 wrap">
     <div class="card p-4 rounded-4 shadow-sm">
-
       <ul class="nav nav-tabs px-4 pt-3" role="tablist">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard"
             type="button">Dashboard</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders"
-            type="button">Incoming Orders</button></li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders" type="button">Incoming Orders</button>
+        </li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#delivered"
             type="button">Delivered Orders</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile"
@@ -171,52 +195,26 @@
       </ul>
 
       <div class="tab-content p-4">
-
         <!-- DASHBOARD -->
         <div class="tab-pane fade show active" id="dashboard">
-          <h4 class="section-title">📋 Your Menu</h4>
-
-          <!-- ⭐ UPDATED ADD ITEM FORM WITH CATEGORY ⭐ -->
+          <h4 class="section-title">📋 Your Product Catalog</h4>
           <div class="row g-2 mb-3">
-
-            <div class="col-md-2">
-              <input id="itemName" class="form-control" placeholder="Name">
-            </div>
-
-            <div class="col-md-3">
-              <input id="itemDesc" class="form-control" placeholder="Description">
-            </div>
-
-            <div class="col-md-2">
-              <input id="itemPrice" type="number" min="0" step="0.01" class="form-control" placeholder="Price">
-            </div>
-
-            <!-- ⭐ NEW CATEGORY DROPDOWN ⭐ -->
-            <div class="col-md-2">
-              <select id="itemCategory" class="form-select">
-                <option value="starter">Starter</option>
-                <option value="main" selected>Main</option>
-                <option value="dessert">Dessert</option>
-                <option value="drink">Drink</option>
-                <option value="side">Side</option>
-              </select>
-            </div>
-
-            <div class="col-md-3">
+            <div class="col-md-3"><input id="itemName" class="form-control" placeholder="Product name"></div>
+            <div class="col-md-3"><input id="itemDesc" class="form-control" placeholder="Description"></div>
+            <div class="col-md-2"><input id="itemPrice" type="number" min="0" step="0.01" class="form-control"
+                placeholder="Price"></div>
+            <div class="col-md-4">
               <div id="drop-dish" class="drop">
-                <small>Attach dish photo (JPG/PNG)</small><br>
+                <small>Attach product photo (JPG/PNG)</small><br>
                 <input id="file-dish" type="file" accept="image/jpeg,image/png" hidden>
                 <button class="btn btn-outline-success btn-sm mt-1" id="btn-dish">Choose file</button>
               </div>
               <div id="thumbs-dish" class="thumb mt-1"></div>
             </div>
-
           </div>
-
-          <button id="addItem" class="btn btn-black w-100 mb-4">Add Menu Item</button>
+          <button id="addItem" class="btn btn-black w-100 mb-4">Add Product</button>
           <ul id="menuList" class="list-group mb-4"></ul>
-        </div> <!-- END DASHBOARD TAB -->
-
+        </div>
 
         <!-- INCOMING ORDERS -->
         <div class="tab-pane fade" id="orders">
@@ -232,8 +230,8 @@
 
         <!-- PROFILE -->
         <div class="tab-pane fade" id="profile">
-          <h4 class="section-title">🏪 Restaurant Profile</h4>
-          <p class="text-muted mb-2">Upload restaurant cover or logo.</p>
+          <h4 class="section-title">🏪 Supermarket Profile</h4>
+          <p class="text-muted mb-2">Upload supermarket cover or logo.</p>
           <div id="drop-restaurant" class="drop mb-2">
             <p class="mb-2">Drag & drop photo here, or click to select</p>
             <input id="file-restaurant" type="file" accept="image/jpeg,image/png" hidden>
@@ -253,11 +251,13 @@
 
     const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e; };
 
+    // ✅ Add welcome name
     function setWelcome(name) {
       const pill = document.getElementById("welcomePill");
       pill.textContent = name ? `Welcome, ${name}` : "";
     }
 
+    // ✅ Improved thumbnail handler
     function addThumb(container, url) {
       container.innerHTML = "";
       const wrap = document.createElement("div");
@@ -265,7 +265,7 @@
       const img = document.createElement("img");
       img.src = new URL(url, location.origin).href;
       img.onerror = () => {
-        img.alt = "Image not previewable";
+        img.alt = "Image not previewable (unsupported format)";
         img.style.height = "60px";
       };
       wrap.append(img);
@@ -278,10 +278,10 @@
       files.forEach(f => fd.append("photos", f));
       fd.append("kind", kind);
 
-      const res = await fetch(`${API_BASE}/restaurant-dashboard/upload`, {
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/upload`, {
         method: "POST",
         body: fd,
-        credentials: "include"
+        credentials: "include" // ✅ ensure session is passed
       });
 
       const data = await res.json();
@@ -290,9 +290,13 @@
         const imgURL = new URL(data.urls[0], location.origin).href;
         addThumb(thumbsContainer, imgURL);
 
-        if (kind === "dish") uploadedDishURL = data.urls[0];
+        if (kind === "dish") {
+          uploadedDishURL = data.urls[0];
+        }
 
-        if (kind === "restaurant") await saveRestaurantPhoto(data.urls[0]);
+        if (kind === "restaurant") {
+          await saveSupermarketPhoto(data.urls[0]);
+        }
 
         return;
       }
@@ -301,50 +305,45 @@
       alert("Upload failed");
     }
 
-    async function saveRestaurantPhoto(url) {
-      await fetch(`${API_BASE}/restaurant-dashboard/photo`, {
+    async function saveSupermarketPhoto(url) {
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/photo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ imageUrl: url })
       });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Supermarket photo saved!");
+      } else {
+        alert("Failed to save photo: " + data.error);
+      }
     }
 
-    // Dish upload handlers
+    // Product image
     const dishInput = document.getElementById("file-dish");
     const dishThumbs = document.getElementById("thumbs-dish");
     document.getElementById("btn-dish").addEventListener("click", () => dishInput.click());
     dishInput.addEventListener("change", () => uploadFiles("dish", [...dishInput.files], dishThumbs));
 
-    // Restaurant image upload
+    // Supermarket image
     const restInput = document.getElementById("file-restaurant");
     const restThumbs = document.getElementById("thumbs-restaurant");
     document.getElementById("btn-restaurant").addEventListener("click", () => restInput.click());
     restInput.addEventListener("change", () => uploadFiles("restaurant", [...restInput.files], restThumbs));
 
-    // ⭐ ADD ITEM WITH CATEGORY ⭐
     document.getElementById("addItem").addEventListener("click", async () => {
       const name = document.getElementById("itemName").value.trim();
       const description = document.getElementById("itemDesc").value.trim();
       const price = parseFloat(document.getElementById("itemPrice").value);
-      const category = document.getElementById("itemCategory").value;
+      if (!name || isNaN(price)) { alert("Name and price required"); return; }
 
-      if (!name || isNaN(price)) {
-        alert("Name and price required");
-        return;
-      }
-
-      await fetch(`${API_BASE}/restaurant-dashboard/menu`, {
+      await fetch(`${API_BASE}/supermarket-dashboard/menu`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          name,
-          description,
-          price,
-          imageUrl: uploadedDishURL,
-          category
-        })
+        body: JSON.stringify({ name, description, price, imageUrl: uploadedDishURL })
       });
 
       uploadedDishURL = "";
@@ -352,33 +351,37 @@
       document.getElementById("itemName").value = "";
       document.getElementById("itemDesc").value = "";
       document.getElementById("itemPrice").value = "";
-
       loadDashboard();
     });
 
     async function loadDashboard() {
-      const res = await fetch(`${API_BASE}/restaurant-dashboard/data`, { credentials: "include" });
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/data`, {
+        credentials: "include"
+      });
+
       const data = await res.json();
 
       if (res.ok && data.ok) {
-        if (data.restaurantImageUrl) {
-          addThumb(document.getElementById("thumbs-restaurant"), data.restaurantImageUrl);
+        if (data.supermarketImageUrl) {
+          addThumb(document.getElementById("thumbs-restaurant"), data.supermarketImageUrl);
         }
-
-        setWelcome(data.restaurantName || "Restaurant");
+        setWelcome(data.supermarketName || "Supermarket");
         updateAuthButton(true);
-
         renderMenu(data.menuItems || []);
-
         const allOrders = data.orders || [];
-        renderOrders(allOrders.filter(o => o.status !== "delivered"));
-        renderDelivered(allOrders.filter(o => o.status === "delivered"));
+        const activeOrders = allOrders.filter(o => o.status !== 'delivered');
+        const deliveredOrders = allOrders.filter(o => o.status === 'delivered');
+        renderOrders(activeOrders);
+        renderDelivered(deliveredOrders);
+
       } else {
+        console.warn("⚠️ Dashboard data error:", data);
         document.getElementById("welcomePill").textContent = "Not logged in";
         updateAuthButton(false);
       }
     }
 
+    // Update login/logout button dynamically
     function updateAuthButton(isLoggedIn) {
       const btn = document.getElementById("authButton");
       if (!btn) return;
@@ -386,20 +389,19 @@
       if (isLoggedIn) {
         btn.textContent = "Sign out";
         btn.onclick = async () => {
-          await fetch(`${API_BASE}/restaurant-auth/logout`, {
+          await fetch(`${API_BASE}/supermarket-auth/logout`, {
             method: "POST",
-            credentials: "include"
+            credentials: "include",
           });
           location.reload();
         };
       } else {
         btn.textContent = "Sign in";
-        btn.setAttribute("href", "/restaurant-login.html");
+        btn.setAttribute("href", "/supermarket-login.html");
         btn.onclick = null;
       }
     }
 
-    // ⭐ SHOW CATEGORY IN MENU LIST ⭐
     function renderMenu(items) {
       const list = document.getElementById("menuList");
       list.innerHTML = "";
@@ -409,42 +411,42 @@
         li.dataset.id = i._id;
 
         li.innerHTML = `
-          <div>
-            <strong>${i.name}</strong> - $${i.price.toFixed(2)}
-            <span class="badge bg-info ms-2">${i.category || "main"}</span>
-            <br>
-            <small>${i.description || ""}</small>
-            ${i.imageUrl ? `<div><img src="${new URL(i.imageUrl, location.origin)}" height="50" class="mt-2 rounded"></div>` : ""}
-          </div>
+      <div>
+        <strong>${i.name}</strong> - $${i.price.toFixed(2)}
+        <span class="badge ${i.isAvailable ? 'bg-success' : 'bg-secondary'} ms-2" id="badge-${i._id}">
+          ${i.isAvailable ? 'Available' : 'Unavailable'}
+        </span><br>
+        <small>${i.description || ""}</small>
+        ${i.imageUrl
+            ? `<div><img src="${new URL(i.imageUrl, location.origin)}" height="50" style="border-radius:8px;margin-top:6px;"></div>`
+            : ""}
+      </div>
 
-          <div class="btn-group">
-            <button id="toggle-${i._id}"
-              class="btn btn-sm ${i.isAvailable ? 'btn-success' : 'btn-outline-secondary'}"
-              onclick="toggleAvailability('${i._id}', ${!i.isAvailable})">
-              ${i.isAvailable ? '✓ Available' : '✗ Unavailable'}
-            </button>
+      <div class="btn-group">
+        <button id="toggle-${i._id}" 
+          class="btn btn-sm ${i.isAvailable ? 'btn-success' : 'btn-outline-secondary'}"
+          onclick="toggleAvailability('${i._id}', ${!i.isAvailable})">
+          ${i.isAvailable ? '✓ Available' : '✗ Unavailable'}
+        </button>
 
-            <button class="btn btn-sm btn-warning"
-              onclick="editItem('${i._id}', '${i.name}', '${i.description || ''}', '${i.price}', '${i.imageUrl || ''}', '${i.category || 'main'}')">
-              Edit
-            </button>
+        <button class="btn btn-sm btn-warning" 
+          onclick="editItem('${i._id}', '${i.name}', '${(i.description || '').replace(/'/g, "\\'")}', '${i.price}', '${(i.imageUrl || '').replace(/'/g, "\\'")}')">
+          Edit
+        </button>
 
-            <button class="btn btn-sm btn-danger"
-              onclick="deleteItem('${i._id}')">
-              Delete
-            </button>
-          </div>
-        `;
+        <button class="btn btn-sm btn-danger" 
+          onclick="deleteItem('${i._id}')">
+          Delete
+        </button>
+      </div>
+    `;
 
         list.appendChild(li);
       });
     }
 
     async function deleteItem(id) {
-      await fetch(`${API_BASE}/restaurant-dashboard/menu/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
+      await fetch(`${API_BASE}/supermarket-dashboard/menu/${id}`, { method: "DELETE", credentials: "include" });
       loadDashboard();
     }
 
@@ -455,91 +457,90 @@
       btn.disabled = true;
       btn.textContent = "Updating…";
 
-      const res = await fetch(`${API_BASE}/restaurant-dashboard/menu/${id}/availability`, {
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/menu/${id}/availability`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ isAvailable: newState })
       });
 
-      btn.disabled = false;
-      btn.textContent = newState ? "✓ Available" : "✗ Unavailable";
+      if (res.ok) {
+        btn.disabled = false;
+        btn.classList.toggle("btn-success", newState);
+        btn.classList.toggle("btn-outline-secondary", !newState);
+        btn.textContent = newState ? "✓ Available" : "✗ Unavailable";
 
-      if (res.ok) loadDashboard();
-      else alert("Failed to update availability");
+        badge.classList.toggle("bg-success", newState);
+        badge.classList.toggle("bg-secondary", !newState);
+        badge.textContent = newState ? "Available" : "Unavailable";
+
+        btn.setAttribute("onclick", `toggleAvailability('${id}', ${!newState})`);
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Error!";
+        alert("Failed to update availability");
+      }
     }
 
-    // ⭐ UPDATED EDIT ITEM (category included) ⭐
-    function editItem(id, currentName, currentDesc, currentPrice, currentImg, currentCategory) {
+    // Inline editor for menu items
+    async function editItem(id, currentName, currentDesc, currentPrice, currentImg) {
       const li = document.querySelector(`#menuList li[data-id="${id}"]`);
       if (!li) return;
 
       li.innerHTML = `
-        <div class="w-100">
+    <div class="w-100">
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Name</label>
+        <input id="edit-name-${id}" type="text" class="form-control" value="${currentName}">
+      </div>
 
-          <div class="mb-2">
-            <label class="form-label fw-semibold">Name</label>
-            <input id="edit-name-${id}" type="text" class="form-control" value="${currentName}">
-          </div>
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Description</label>
+        <textarea id="edit-desc-${id}" class="form-control" rows="2">${currentDesc}</textarea>
+      </div>
 
-          <div class="mb-2">
-            <label class="form-label fw-semibold">Description</label>
-            <textarea id="edit-desc-${id}" class="form-control" rows="2">${currentDesc}</textarea>
-          </div>
+      <div class="mb-2">
+        <label class="form-label fw-semibold">Price</label>
+        <input id="edit-price-${id}" type="number" step="0.01" class="form-control" value="${currentPrice}">
+      </div>
 
-          <div class="mb-2">
-            <label class="form-label fw-semibold">Price</label>
-            <input id="edit-price-${id}" type="number" step="0.01" class="form-control" value="${currentPrice}">
-          </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Image URL</label>
+        <input id="edit-img-${id}" type="text" class="form-control" value="${currentImg}">
+      </div>
 
-          <!-- ⭐ CATEGORY DROPDOWN IN EDIT MODE ⭐ -->
-          <div class="mb-2">
-            <label class="form-label fw-semibold">Category</label>
-            <select id="edit-category-${id}" class="form-select">
-              <option value="starter" ${currentCategory === "starter" ? "selected" : ""}>Starter</option>
-              <option value="main" ${currentCategory === "main" ? "selected" : ""}>Main</option>
-              <option value="dessert" ${currentCategory === "dessert" ? "selected" : ""}>Dessert</option>
-              <option value="drink" ${currentCategory === "drink" ? "selected" : ""}>Drink</option>
-              <option value="side" ${currentCategory === "side" ? "selected" : ""}>Side</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Image URL</label>
-            <input id="edit-img-${id}" type="text" class="form-control" value="${currentImg}">
-          </div>
-
-          <div class="d-flex gap-2">
-            <button class="btn btn-success" onclick="saveEdit('${id}')">Save</button>
-            <button class="btn btn-outline-secondary" onclick="cancelEdit('${id}')">Cancel</button>
-          </div>
-
-        </div>
-      `;
+      <div class="d-flex gap-2">
+        <button class="btn btn-success" onclick="saveEdit('${id}')">✅ Save</button>
+        <button class="btn btn-outline-secondary" onclick="cancelEdit('${id}')">Cancel</button>
+      </div>
+    </div>
+  `;
     }
 
-    // ⭐ SAVE EDIT INCLUDING CATEGORY ⭐
     async function saveEdit(id) {
       const name = document.getElementById(`edit-name-${id}`).value.trim();
       const description = document.getElementById(`edit-desc-${id}`).value.trim();
       const price = parseFloat(document.getElementById(`edit-price-${id}`).value);
       const imageUrl = document.getElementById(`edit-img-${id}`).value.trim();
-      const category = document.getElementById(`edit-category-${id}`).value;
 
       if (!name || isNaN(price)) {
         alert("Please enter a valid name and price.");
         return;
       }
 
-      const res = await fetch(`${API_BASE}/restaurant-dashboard/menu/${id}`, {
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/menu/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, description, price, imageUrl, category })
+        body: JSON.stringify({ name, description, price, imageUrl })
       });
 
-      if (res.ok) loadDashboard();
-      else alert("Failed to update item");
+      if (res.ok) {
+        loadDashboard();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert("Failed to update item: " + (data.error || "unknown error"));
+      }
     }
 
     function cancelEdit(id) {
@@ -547,6 +548,7 @@
     }
 
     loadDashboard();
+
     function renderOrders(orders) {
       const wrap = document.getElementById("orderList");
       if (!orders || orders.length === 0) {
@@ -559,10 +561,10 @@
           const itemsHtml = (o.items || [])
             .map(
               (it) => `
-                <div class="d-flex justify-content-between">
-                  <div>${it.name} x${it.quantity}</div>
-                  <div>$${(Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)}</div>
-                </div>`
+        <div class="d-flex justify-content-between">
+          <div>${it.name} x${it.quantity}</div>
+          <div>$${(Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)}</div>
+        </div>`
             )
             .join("");
 
@@ -576,41 +578,40 @@
           const disableOFD = ["delivered"].includes(status);
 
           return `
-            <div class="card mb-3">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div class="fw-semibold">Order #${o._id}</div>
-                    <div class="text-secondary small">${new Date(o.createdAt).toLocaleString()}</div>
-                    <div class="mt-2">${statusBadge}</div>
-                  </div>
-                  <div class="text-end">
-                    <div>Subtotal: <strong>$${Number(o.subtotal || 0).toFixed(2)}</strong></div>
-                    <div>Delivery: <strong>$${Number(o.deliveryFee || 0).toFixed(2)}</strong></div>
-                    <div>Total: <span class="fs-5 fw-bold">$${Number(o.total || 0).toFixed(2)}</span></div>
-                  </div>
-                </div>
-                <hr class="my-2">
-                ${itemsHtml}
-                <div class="mt-3 d-flex gap-2">
-
-                  <button class="btn btn-sm btn-outline-secondary"
-                    ${disablePrep ? "disabled" : ""}
-                    onclick="updateOrderStatus('${o._id}','preparing')">Mark Preparing</button>
-
-                  <button class="btn btn-sm btn-warning"
-                    ${disableReady ? "disabled" : ""}
-                    onclick="updateOrderStatus('${o._id}','ready_for_pickup')">Ready for Pickup</button>
-
-                  <button class="btn btn-sm btn-outline-primary"
-                    ${disableOFD ? "disabled" : ""}
-                    onclick="updateOrderStatus('${o._id}','out_for_delivery')">Out for Delivery</button>
-
-                </div>
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold">Order #${o._id}</div>
+                <div class="text-secondary small">${new Date(o.createdAt).toLocaleString()}</div>
+                <div class="mt-2">${statusBadge}</div>
               </div>
-            </div>`;
+              <div class="text-end">
+                <div>Subtotal: <strong>$${Number(o.subtotal || 0).toFixed(2)}</strong></div>
+                <div>Delivery: <strong>$${Number(o.deliveryFee || 0).toFixed(2)}</strong></div>
+                <div>Total: <span class="fs-5 fw-bold">$${Number(o.total || 0).toFixed(2)}</span></div>
+              </div>
+            </div>
+            <hr class="my-2">
+            ${itemsHtml}
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary"
+                ${disablePrep ? "disabled" : ""}
+                onclick="updateOrderStatus('${o._id}','preparing')">Mark Preparing</button>
+
+              <button class="btn btn-sm btn-warning"
+                ${disableReady ? "disabled" : ""}
+                onclick="updateOrderStatus('${o._id}','ready_for_pickup')">Ready for Pickup</button>
+
+              <button class="btn btn-sm btn-outline-primary"
+                ${disableOFD ? "disabled" : ""}
+                onclick="updateOrderStatus('${o._id}','out_for_delivery')">Out for Delivery</button>
+            </div>
+          </div>
+        </div>`;
         })
         .join("");
+
     }
 
     function renderDelivered(orders) {
@@ -625,10 +626,10 @@
           const itemsHtml = (o.items || [])
             .map(
               (it) => `
-                <div class="d-flex justify-content-between">
-                  <div>${it.name} x${it.quantity}</div>
-                  <div>$${(Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)}</div>
-                </div>`
+          <div class="d-flex justify-content-between">
+            <div>${it.name} x${it.quantity}</div>
+            <div>$${(Number(it.price || 0) * Number(it.quantity || 1)).toFixed(2)}</div>
+          </div>`
             )
             .join("");
 
@@ -637,42 +638,43 @@
             : new Date(o.updatedAt || o.createdAt).toLocaleString();
 
           return `
-            <div class="card mb-3">
-              <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div class="fw-semibold">Order #${o._id}</div>
-                    <div class="text-secondary small">Delivered: ${deliveredAt}</div>
-                    <div class="mt-1">
-                      <span class="badge bg-success text-uppercase">DELIVERED</span>
-                    </div>
-                  </div>
-
-                  <div class="text-end">
-                    <div class="fw-semibold">Delivery to:</div>
-                    <div class="small">${o.deliveryLocation || "N/A"}</div>
-                    <div>Total: <span class="fs-5 fw-bold">$${Number(o.total || 0).toFixed(2)}</span></div>
-                  </div>
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold">Order #${o._id}</div>
+                <div class="text-secondary small">Delivered: ${deliveredAt}</div>
+                <div class="mt-1">
+                  <span class="badge bg-success text-uppercase">DELIVERED</span>
                 </div>
-                <hr class="my-2">
-                ${itemsHtml}
               </div>
-            </div>`;
+              <div class="text-end">
+                <div class="fw-semibold">Delivery to:</div>
+                <div class="small">${o.deliveryLocation || "N/A"}</div>
+                <div>Total: <span class="fs-5 fw-bold">$${Number(o.total || 0).toFixed(2)}</span></div>
+              </div>
+            </div>
+            <hr class="my-2">
+            ${itemsHtml}
+          </div>
+        </div>`;
         })
         .join("");
     }
 
     async function updateOrderStatus(id, status) {
-      const res = await fetch(`${API_BASE}/restaurant-dashboard/orders/${id}/status`, {
+      const res = await fetch(`${API_BASE}/supermarket-dashboard/orders/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ status })
       });
-
       const d = await res.json();
-      if (res.ok) loadDashboard();
-      else alert(d.error || "Failed to update");
+      if (res.ok) {
+        loadDashboard();
+      } else {
+        alert(d.error || "Failed to update");
+      }
     }
 
   </script>
@@ -681,7 +683,6 @@
   <footer class="border-top bg-white mt-5">
     <div class="container py-5">
       <div class="row gy-4">
-
         <div class="col-12 col-md-4 text-center text-md-start">
           <a class="navbar-brand d-inline-flex align-items-center gap-2" href="/index.html">
             <img src="/assets/BiteCodeNOBG.png" alt="BiteCode logo" class="brand-logo">
@@ -701,6 +702,7 @@
             <li class="mb-2"><a class="link-muted" href="/customer-login.html">Customer Login</a></li>
             <li class="mb-2"><a class="link-muted" href="/driver-login.html">Driver Login</a></li>
             <li class="mb-2"><a class="link-muted" href="/restaurant-login.html">Restaurant Login</a></li>
+            <li class="mb-2"><a class="link-muted" href="/supermarket-login.html">Supermarket Login</a></li>
           </ul>
         </div>
 
@@ -710,7 +712,10 @@
             <li class="mb-2"><a class="link-muted" href="/customer-register.html">Join as a Customer</a></li>
             <li class="mb-2"><a class="link-muted" href="/register-driver.html">Partner as a Driver</a></li>
             <li class="mb-2"><a class="link-muted" href="/restaurant-register.html">Register a Restaurant 🍽️</a></li>
-            <li class="mb-2"><a class="link-muted" href="/about-us.html">About Us</a></li>
+            <li class="mb-2"><a class="link-muted" href="/supermarket-register.html">Register a Supermarket 🛒</a></li>
+            <li class="mb-2">
+              <a class="link-muted" href="/about-us.html">About Us</a>
+            </li>
           </ul>
 
           <ul class="list-unstyled small mb-0 d-flex justify-content-center justify-content-md-end gap-3">
@@ -727,9 +732,7 @@
               </a>
             </li>
           </ul>
-
         </div>
-
       </div>
     </div>
   </footer>
@@ -739,5 +742,5 @@
   </script>
 
 </body>
-</html>
 
+</html>
