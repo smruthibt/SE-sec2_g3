@@ -39,13 +39,13 @@ describe("POST /api/orders (Customer places order)", () => {
     const menuRes = await agent
       .post("/api/menu")
       .send({
-        name: "Margherita Pizza",
-        price: 10.99,
-        restaurantId: restaurant._id,
-        description: "Classic pizza with cheese and tomato sauce",
-      })
-      .expect(201);
-
+  name: "Margherita Pizza",
+  price: 10.99,
+  restaurantId: restaurant._id,
+  description: "Classic pizza with cheese and tomato sauce",
+  category: "main",
+});
+console.log(menuRes.status, menuRes.body);
     const createdItem = menuRes.body.item;
     console.log("🍕 Created menu item:", createdItem._id);
 
