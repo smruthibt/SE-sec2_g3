@@ -110,25 +110,75 @@ console.log("Chessboard global:", typeof Chessboard);
     const giveUpBtn = document.getElementById("giveUpBtn");
     const instructionEl = document.getElementById("instruction");
 
-    // --- Simple puzzle bank (one puzzle per difficulty for now) ---
-    // FEN positions + correct move in UCI
-    const PUZZLES = {
-      easy: {
-        fen: "8/8/8/8/8/5k2/6Q1/7K w - - 0 1",
-        solution: "g2g4", // Qg4+
-        side: "w"
-      },
-      medium: {
-        fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
-        solution: "f1b5", // Bb5
-        side: "w"
-      },
-      hard: {
-        fen: "r3k2r/pp1n1ppp/2p1pn2/q2p4/3P4/2N1PN2/PP3PPP/R2Q1RK1 w kq - 0 1",
-        solution: "a1b1", // Artificial example – replace with nicer one later
-        side: "w"
-      }
-    };
+const PUZZLES = {
+  easy: [
+    {
+      // Easy 1 – same Qg4+ idea, but with a couple of extra pawns
+      // White to move: play Qg4+ attacking the king.
+      fen: "p7/1P6/8/8/8/5k2/6Q1/7K w - - 0 1",
+      solution: "g2g4", // Qg4+
+      side: "w"
+    },
+    {
+      // Easy 2 – simple tactic: win the black queen with Qxd4
+      // White to move: queen takes the hanging queen on d4.
+      fen: "8/6kp/6p1/8/2Bq1P2/8/5PPP/3Q1RK1 w - - 0 1",
+      solution: "d1d4", // Qxd4
+      side: "w"
+    },
+    {
+      // Easy 3 – rook tactic: Rxf7+ picking up the pawn in front of the king
+      // White to move: capture on f7 with check.
+      fen: "5rk1/5p1p/8/8/2B5/8/7P/3Q1RK1 w - - 0 1",
+      solution: "f1f7", // Rxf7+
+      side: "w"
+    }
+  ],
+
+  medium: [
+    {
+      // your existing medium puzzle
+      fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+      solution: "f1b5", // Bb5
+      side: "w"
+    },
+    {
+      // Mate-in-one style
+      fen: "6k1/5ppp/8/7Q/8/8/8/6K1 w - - 0 1",
+      solution: "h5e8", // Qe8#
+      side: "w"
+    },
+    {
+      // Tactic-like bishop sacrifice
+      fen: "r1bqk2r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 4 5",
+      solution: "c4f7", // Bxf7+
+      side: "w"
+    }
+  ],
+
+  hard: [
+    {
+      // your existing hard puzzle
+      fen: "r3k2r/pp1n1ppp/2p1pn2/q2p4/3P4/2N1PN2/PP3PPP/R2Q1RK1 w kq - 0 1",
+      solution: "a1b1",
+      side: "w"
+    },
+    {
+      // Harder — black to move (board flips)
+      fen: "r1bq1rk1/ppp2ppp/2n2n2/3pp3/3PP3/2P1BN2/PP3PPP/RN1Q1RK1 b - - 0 7",
+      solution: "d5e4", // ...dxe4
+      side: "b"
+    },
+    {
+      // Another black-to-move example
+      fen: "rnbq1rk1/ppp1bppp/4pn2/3p4/3P4/2N1PN2/PP3PPP/R1BQKB1R b KQ - 0 6",
+      solution: "c7c5", // ...c5
+      side: "b"
+    }
+  ]
+};
+
+
 
     let game = null;
     let board = null;
@@ -241,26 +291,29 @@ function initBoard(fen, sideToMove) {
     }
 
     startBtn.addEventListener("click", () => {
-      const difficulty = difficultySelect.value;
-      const puzzle = PUZZLES[difficulty];
+  const difficulty = difficultySelect.value;
+  const pool = PUZZLES[difficulty];
 
-      if (!puzzle) {
-        alert("No puzzle defined for difficulty " + difficulty);
-        return;
-      }
+  if (!Array.isArray(pool) || pool.length === 0) {
+    alert("No puzzles defined for difficulty " + difficulty);
+    return;
+  }
 
-      puzzleSolution = puzzle.solution;
-      wrongMove = false;
-      statusEl.textContent = "";
-      instructionEl.textContent = `Difficulty: ${difficulty}. Solve in under 60s with no wrong moves.`;
+  // pick a random puzzle from that difficulty
+  const puzzle = pool[Math.floor(Math.random() * pool.length)];
 
-      initBoard(puzzle.fen, puzzle.side);
-      startTimer();
+  puzzleSolution = puzzle.solution;
+  wrongMove = false;
+  statusEl.textContent = "";
+  instructionEl.textContent = `Difficulty: ${difficulty}. Solve in under 60s with no wrong moves.`;
 
-      startBtn.disabled = true;
-      difficultySelect.disabled = true;
-      giveUpBtn.disabled = false;
-    });
+  initBoard(puzzle.fen, puzzle.side);
+  startTimer();
+
+  startBtn.disabled = true;
+  difficultySelect.disabled = true;
+  giveUpBtn.disabled = false;
+});
 
     giveUpBtn.addEventListener("click", async () => {
       clearInterval(timerId);

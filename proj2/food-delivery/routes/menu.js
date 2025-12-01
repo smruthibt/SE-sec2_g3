@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 //POST /api/menu
 router.post('/', async (req, res) => {
   try {
-    const { name, price, restaurantId, description } = req.body;
+    const { name, price, restaurantId, description,category } = req.body;
     if (!name || !price || !restaurantId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
