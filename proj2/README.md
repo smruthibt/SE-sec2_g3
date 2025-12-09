@@ -294,10 +294,14 @@ The name is unique, created specifically for this project, and free from any kno
 - Added Google Maps integration to visualize store locations, delivery routes, and live ETAs during order tracking.
 - Developed a collaborative-filtering recommendation module to suggest personalized dishes and restaurants based on user purchase patterns.
 
-![Chess engine](./food-delivery/public/assets/Chess%20engine.png)
-![Live order tracking](./food-delivery/public/assets/Live%20order%20tracking.png)
-![Recommendation System](./food-delivery/public/assets/Reccomendation%20System.png)
-![Supermarket Integration](./food-delivery/public/assets/Supermarket%20Integration.png)
+<p align="center">
+  <img src="./food-delivery/public/assets/Chess%20engine.png" width="400" />
+  <img src="./food-delivery/public/assets/Live%20order%20tracking.png" width="400" />
+  <img src="./food-delivery/public/assets/Reccomendation%20System.png" width="400" />
+  <img src="./food-delivery/public/assets/Supermarket%20Integration.png" width="400" />
+</p>
+
+
 
 
 
