@@ -1,245 +1,287 @@
-# 🍔 BiteCode – Food Delivery Module
 
-The **Food Delivery** component of **BiteCode** is a MERN-based web app that powers the “Order” side of the platform.  
-It allows users to browse restaurants, add items to the cart, and place orders — while integrating with the coding challenge system that rewards users for solving problems before their food arrives.
+## 🍽️ BiteCode – Food Delivery Module
 
----
+The **Food Delivery** module of **BiteCode** is a Node.js + MongoDB web app that powers the “order” side of the BiteCode platform.
+Customers can discover restaurants and supermarkets, browse menus, place orders, play coding/chess challenges while waiting, and pay using a mock checkout flow.
+Drivers, restaurants, and supermarkets each get their own dashboard for managing orders, inventory, and delivery workflows.
 
-## 🚀 Overview
-
-This submodule serves as the **restaurant and order management system** for BiteCode.  
-It provides APIs and a Bootstrap-powered frontend for core food delivery functionality, including menu browsing, cart management, and checkout.
-
-When connected with the Judge0 frontend, the order experience becomes interactive — users can solve coding problems to **unlock discounts up to $20** on their current order.
+This module integrates tightly with the separate **Judge0 frontend**, which runs coding challenges and returns results that are converted into discount coupons and applied to future orders.
 
 ---
 
-## ✨ Features
+## 🔥 Project 3 Features
 
-- **Restaurant discovery & search** — list, filter, view details and menus
-- **Cart & checkout** — add/update/remove items, create orders
-- **Auth flows** — Customer & Restaurant login/register, session-backed
-- **Restaurant dashboard** — manage menu, view orders (status filters, updates)
-- **Driver flows** — accept/pickup/deliver, basic payouts endpoints
-- **Coupons & rewards** — promo application, coding-challenge discounts
-- **Static client** — Bootstrap pages in `/public` (customer/restaurant/driver)
-- **Testable-by-default** — `mongodb-memory-server` harness, jsdom UI tests
-- **Seeding** — one-command demo data + **stable demo credentials** CSV
+### 1️⃣ ML Collaborative Filtering–Based Food Recommendation
 
----
+We added a **recommendation service** that personalizes dish suggestions for each customer:
 
-## 🧰 Prerequisites
+* Learns from historical **order data** and **item co-occurrence** across users.
+* Uses a **collaborative filtering** approach – customers who ordered similar items help inform each other’s recommendations.
+* For a given restaurant, the system boosts:
 
-- [Node.js](https://nodejs.org/) 18+
-- [MongoDB](https://www.mongodb.com/try/download/community) (local) or MongoDB Atlas URI
+  * Items frequently co-ordered with what the current user has liked.
+  * Globally popular items within that restaurant.
+* Recommendations are surfaced on:
 
----
+  * Restaurant detail page (recommended section).
+  * Menu page sidecar (“You may also like…”) for logged-in customers.
 
-## 🧑‍💻 Setup Instructions
+Implementation highlights:
 
-1. **Open the project** in VS Code or terminal.
-2. Copy `.env.sample` → `.env` and update the database connection if needed.  
-   Default:  
-   ```env
-   MONGODB_URI=mongodb://127.0.0.1:27017/food_delivery_app
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Seed the database with sample data:
-   ```bash
-   npm run seed
-   ```
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
-6. Visit the app in your browser:  
-   👉 http://localhost:3000
+* Reuses existing `Order` and `MenuItem`/`Restaurant` data.
+* Exposed via a dedicated recommendations API (see below).
+* Designed to be stateless so it can be scaled independently later.
 
 ---
 
-## 📁 Project Structure
+### 2️⃣ Google Maps Integration for Order Tracking
 
-```
+We extended the platform with **real-time route visualization** using the Google Maps JavaScript API:
+
+* Each **Customer**, **Restaurant**, and **Supermarket** now stores geospatial coordinates `[lng, lat]` in MongoDB.
+* When a customer opens **Track Order**, the system:
+
+  * Loads the order via `/api/orders/:orderId`.
+  * Derives pickup coordinates from either `restaurantDetails.coordinates` or `supermarketDetails.coordinates`.
+  * Derives drop-off coordinates from `customerDetails.coordinates`.
+* The frontend draws:
+
+  * A polyline from pickup → drop-off.
+  * Markers for origin, destination, and (optionally) the driver.
+* As the driver updates status, the UI can poll driver endpoints and update the map to reflect progress.
+
+This gives a modern “live tracking” experience for both restaurant and supermarket orders.
+
+---
+
+### 3️⃣ Supermarket Dashboard Integration
+
+Beyond restaurants, the system now supports **supermarkets** end-to-end:
+
+* Supermarkets can **register, log in, and manage their own catalog**.
+* Each supermarket has:
+
+  * Display name, description, image, address.
+  * `[lng, lat]` coordinates for map-based routing.
+* Supermarket dashboard capabilities:
+
+  * Add / edit / delete grocery items and categories.
+  * Control item availability.
+  * View and update the status of incoming supermarket orders.
+* Customer side:
+
+  * Supermarkets show up on the home page along with restaurants.
+  * There is a dedicated **supermarket detail page** and **menu** view.
+  * Orders placed through a supermarket follow the same lifecycle and can be tracked on Google Maps.
+
+This effectively turns BiteCode into a unified **food + grocery** delivery platform.
+
+---
+
+### 4️⃣ Chess Puzzles Integration (Gamified Waiting)
+
+To complement coding challenges, we integrated **chess puzzles** as an alternative gamified experience:
+
+* When an order is placed, the customer can opt into solving a chess puzzle.
+* Puzzles are tagged by difficulty: **Easy**, **Medium**, **Hard**.
+* The backend validates whether the user played the correct sequence of moves for the puzzle.
+* Successful completion yields a **coupon**, with discount magnitude tied to puzzle difficulty:
+
+  * Easy → small discount
+  * Medium → moderate discount
+  * Hard → maximum discount
+* Earned coupons are persisted and applied at checkout just like coding-challenge rewards.
+
+Chess puzzles share the same high-level reward pipeline as coding challenges but via a separate, chess-specific API.
+
+---
+
+## 🧱 Directory Structure (Food Delivery Module)
+
+```text
 food-delivery/
-├─ config/
-│  └─ rewards.js
-├─ models/
-│  ├─ CartItem.js, CustomerAuth.js, Driver.js, DriverAuth.js
-│  ├─ MenuItem.js, Order.js, Restaurant.js, RestaurantAdmin.js, User.js
-│  └─ ChallengeSession.js, Coupon.js
-├─ public/                # Bootstrap-based client (HTML/CSS/JS)
-│  ├─ index.html, restaurant.html, cart.html, orders.html
-│  ├─ customer-login.html, restaurant-login.html, restaurant-welcome.html
-│  └─ assets/ ... (images, css, js)
-├─ routes/                # Express API routers
-│  ├─ restaurants.js, menu.js, cart.js, orders.js, payments.js
-│  ├─ restaurantAuth.js, customerAuth.js
-│  ├─ restaurantDashboard.js, driverDashboard.js, driverRoutes.js
-│  ├─ coupons.js, challenges.js
-│  └─ README.md
-├─ seed/                  # Data seeders + demo credentials
-│  ├─ seed.js, seed_admins.js
-│  ├─ seed_demo6.js, seed_demo6_admins.js
-│  └─ seeded_restaurant_credentials.csv
-├─ tests/                 # Jest unit/integration + jsdom UI tests
-│  ├─ customer/, restaurant/, driver/, coupons/, payments/
-│  ├─ frontend/ (jsdom DOM/UI tests)
-│  ├─ e2e/ (Playwright specs)
-│  └─ helpers/testUtils.js (mongodb-memory-server harness)
-├─ uploads/               # Uploaded images (multer)
-├─ server.js              # Express app bootstrap (sessions, routes, static)
-├─ jest.config.mjs        # Node env tests
-├─ jest.config.frontend.mjs  # jsdom tests
-├─ jest.setup.frontend.js
-├─ .env.sample            # Environment template
-└─ package.json
-
----
-
-## 🔧 Environment Setup
-
-1. **Prereqs**
-   - Node.js 20.x, npm 10+
-   - MongoDB (local) or MongoDB Atlas
-
-2. **Configure env**
-   ```bash
-   cp .env.sample .env
-   # edit as needed
-   ```
-   Key vars:
-   - `MONGODB_URI` (local default: `mongodb://127.0.0.1:27017/food_delivery_app`)
-   - `SESSION_SECRET` (long random string)
-   - `PORT` (default `3000`)
-   - `JUDGE0_UI_URL` if using coding-rewards UI
-   - `CHALLENGE_JWT_SECRET`
-
-3. **Install**
-   ```bash
-   npm ci
-   ```
-
-4. **Seed (optional but recommended)**
-   ```bash
-   npm run seed         # base restaurants/menus/users
-   npm run seed:admins  # admin/demo restaurant accounts
-   # or demo-6 set:
-   npm run seed:demo6
-   npm run seed:demo6:admins
-   ```
-   Stable credentials are written to: `seed/seeded_restaurant_credentials.csv` (email/password per demo restaurant).
-
----
-
-## ▶️ Development Setup
-
-```bash
-# start dev server (HTTP + static client at /public)
-npm run dev
-# or
-npm start
+├── server.js                     # Express app entrypoint (multi-session: customer/driver/restaurant/supermarket)
+├── .env.example                  # Example environment config
+├── package.json
+│
+├── models/                       # Mongoose schemas
+│   ├── CustomerAuth.js           # Customers (with coordinates)
+│   ├── Restaurant.js             # Restaurants (with coordinates + menu linkage)
+│   ├── Supermarket.js            # Supermarkets (with coordinates)  ← proj3
+│   ├── MenuItem.js               # Menu items for restaurants
+│   ├── SupermarketItem.js        # (if present) Grocery items       ← proj3
+│   ├── Order.js                  # Orders (restaurant or supermarket)
+│   ├── Coupon.js                 # Coupons earned from games
+│   └── ChallengeSession.js       # Coding / chess challenge sessions
+│
+├── routes/                       # Express route handlers
+│   ├── customerAuth.js           # Customer registration & login
+│   ├── restaurantAuth.js         # Restaurant auth
+│   ├── supermarkets.js           # List/get supermarkets            ← proj3
+│   ├── supermarketMenu.js        # Supermarket items API            ← proj3
+│   ├── SupermarketAuth.js        # Supermarket auth                 ← proj3
+│   ├── supermarket-dashboard.js  # Supermarket dashboard endpoints  ← proj3
+│   ├── restaurants.js            # Restaurants list/details
+│   ├── menu.js                   # Restaurant menu APIs
+│   ├── cart.js                   # Cart operations (customerId via session)
+│   ├── orders.js                 # Order creation + /:orderId map data
+│   ├── payments.js               # Mock payment flow
+│   ├── driverRoutes.js           # Driver auth & core APIs
+│   ├── driverDashboard.js        # Driver dashboard APIs
+│   ├── challenges.js             # Coding challenge API (Judge0 integration)
+│   ├── chessChallenges.js        # Chess puzzle challenge API       ← proj3
+│   ├── coupons.js                # Coupon issuance & redemption
+│   └── recommendations.js        # Collaborative filtering service  ← proj3
+│
+├── public/                       # Static HTML/CSS/JS frontend
+│   ├── index.html                # Landing page (restaurants + supermarkets)
+│   ├── restaurant.html           # Restaurant detail + menu
+│   ├── supermarket.html          # Supermarket detail + grocery menu ← proj3
+│   ├── customer-login.html
+│   ├── restaurant-dashboard.html
+│   ├── supermarket-login.html    ← proj3
+│   ├── supermarket-dashboard.html← proj3
+│   ├── driver-login.html
+│   ├── driver-dashboard.html
+│   ├── track-order.html          # Google Maps order tracking       ← proj3
+│   ├── assets/                   # Logos, icons, images
+│   └── js/                       # Page-specific JS (cart, maps, recommendations, chess UI)
+│
+├── uploads/                      # Uploaded images for restaurants/supermarkets/items
+│
+└── tests/                        # API & E2E tests (if configured)
+    └── playwright.config.js
 ```
 
-- API base: `http://localhost:$PORT/api`
-- Static client: `http://localhost:$PORT/`
-- Sessions: `express-session` + cookie (SameSite=Lax, httpOnly)
-- CORS: `http://localhost:3000` and `http://localhost:4000` allowed by default
-
-**Key NPM scripts** (see `package.json`):
-- `dev`, `start` — run Express server
-- `seed`, `seed:admins`, `seed:demo6`, `seed:demo6:admins` — data seeders
-- `test` — Jest node tests (Supertest, in-memory Mongo)
-- `test:fe` — jsdom tests for UI
-- `test:e2e` — Playwright specs
+Files marked **← proj3** are newly added or significantly extended for the four project-3 features.
 
 ---
 
-## 🧪 Testing
+## 📡 Key APIs Added / Updated for Project 3
 
-**Unit/Integration (Jest + Supertest)**  
-- Configuration: `jest.config.mjs`  
-- Harness: `tests/helpers/testUtils.js` (spins up `mongodb-memory-server`, mounts `server.js`, and returns a `supertest` agent).  
-  ```
+### 🧠 1. Recommendation Service (Collaborative Filtering)
 
-**Frontend DOM/UI (Jest + jsdom)**  
-- Configuration: `jest.config.frontend.mjs` + `jest.setup.frontend.js`  
-- Targets pages under `/public` (e.g., navbar links, cart UI behaviors).
+**Main router:** `routes/recommendations.js`
+**Base path:** `/api/recommendations`
 
-**End-to-end (Playwright)**  
-- Location: `tests/e2e/`
-- Run locally:
-  ```bash
-  npm run test:e2e
+| Method | Path                          | Description                                                                            | Auth     |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------------- | -------- |
+| GET    | `/api/recommendations/menu`   | Returns recommended menu items for the **current customer** and selected restaurant.   | Customer |
+| GET    | `/api/recommendations/global` | Optional: returns trending/popular dishes across all restaurants for the landing page. | Public   |
 
----
+Typical usage from the frontend:
 
-## 🧰 Technology Stack
-
-- **Backend**: Node.js, Express, Mongoose, express-session, connect-mongo
-- **Database**: MongoDB (local/Atlas)
-- **Auth/Security**: bcrypt, JWT (for challenge flows), CORS
-- **Client**: Static Bootstrap pages in `/public` (HTML/CSS/JS)
-- **Payments/Promos**: placeholder endpoints + coupons/rewards map (`config/rewards.js`)
-- **Testing**: Jest, Supertest, mongodb-memory-server, jsdom; Playwright for E2E
-- **Tooling**: cross-env, morgan, multer (uploads), dotenv
+* Called when a **restaurant page** or **menu** page is loaded.
+* Uses `req.session.customerId` to personalise results.
 
 ---
 
-## 🔌 Key API Endpoints (sample)
+### 🗺️ 2. Google Maps Order Tracking
 
-- `GET /api/restaurants` — list/search restaurants  
-- `GET /api/restaurants/:id` — details + menu  
-- `POST /api/restaurant-auth/register|login|logout`, `GET /api/restaurant-auth/me`  
-- `POST /api/customer-auth/register|login|logout`, `GET /api/customer-auth/me`  
-- `GET/POST/PATCH /api/restaurant-dashboard/...` (menu + orders management)  
-- `POST /api/cart`, `PATCH /api/cart/:id`, `DELETE /api/cart/:id`  
-- `POST /api/orders` — create order; `GET /api/orders?status=...` — filter history  
-- `POST /api/coupons/apply` — apply coupon to cart/order  
-- `GET /api/driver/orders/new|pending`, `PATCH /api/driver/orders/accept/:id|delivered/:id`
+**Updated router:** `routes/orders.js`
+**Key endpoint:**
 
-> See the `routes/` directory for full handlers and tests under `tests/` for expected behaviors.
+| Method | Path              | Description                                                                                                                    | Used by          |
+| ------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| GET    | `/api/orders/:id` | Returns a **hydrated order**: order document + `customerDetails` + `restaurantDetails` **or** `supermarketDetails` with coords | Track-order page |
 
----
+Response shape (simplified):
 
-## 🔐 Demo Logins
+```json
+{
+  "_id": "...",
+  "status": "out_for_delivery",
+  "customerDetails": {
+    "coordinates": [lng, lat],
+    "address": "..."
+  },
+  "restaurantDetails": {
+    "coordinates": [lng, lat],
+    "name": "Los Lobos"
+  },
+  "supermarketDetails": null
+}
+```
 
-After running seeders, open `seed/seeded_restaurant_credentials.csv` for restaurant demo emails/passwords. This file is kept constant by the seeders to support automated tests and demos.
+For supermarket orders, `restaurantDetails` is `null` and `supermarketDetails` is populated instead.
+`public/track-order.html` then uses these coordinates with the Google Maps JS API to:
 
----
+* Draw the route.
+* Place markers.
+* Optionally animate driver progress using driver APIs:
 
-## 🧭 Local Development Tips
+From `driverRoutes.js` / `driverDashboard.js` (already existed but now used by maps):
 
-- Use Chrome DevTools **Network** tab to inspect API requests from `/public` pages.
-- Keep Playwright E2E independent of Jest by ignoring `tests/e2e` in `jest.config.mjs` (already configured).
-
----
-
-## 🧯 Troubleshooting
-
-- **Port busy**: change `PORT` in `.env` or stop the previous server.
-- **Mongo not found**: ensure `MONGODB_URI` is reachable; for Jest runs we auto-start an in-memory Mongo.
-- **CORS errors**: adjust `cors({ origin: [...] })` in `server.js`.
-- **Session issues in tests**: in `NODE_ENV=test` MemoryStore is used (no external Mongo needed).
-
----
-
-## 💡 Notes
-
-- MongoDB must be running locally or accessible through the connection URI.  
-- The frontend and backend run under the same origin — no CORS config needed.  
-- Image placeholders are sourced from Unsplash; you can replace them with local assets.  
-- For gamified functionality (discounts via coding), integrate with the **Judge0 frontend**.
+| Method | Path                         | Description                            |
+| ------ | ---------------------------- | -------------------------------------- |
+| GET    | `/api/driver/status`         | Returns driver’s current status.       |
+| PATCH  | `/api/driver/active`         | Mark driver online/offline.            |
+| GET    | `/api/driver/orders/new`     | Get new orders available for pickup.   |
+| GET    | `/api/driver/orders/pending` | Get currently assigned, active orders. |
 
 ---
 
-## 🧾 License
+### 🛒 3. Supermarket Dashboard & APIs
 
-This submodule is part of the **[BiteCode Platform](../README.md)**  
-and is licensed under the **[MIT License](../LICENSE)**.
+**Routers:**
+
+* `routes/supermarkets.js`
+* `routes/supermarketMenu.js`
+* `routes/SupermarketAuth.js`
+* `routes/supermarket-dashboard.js`
+
+**Customer-facing APIs**
+
+| Method | Path                                       | Description                                |
+| ------ | ------------------------------------------ | ------------------------------------------ |
+| GET    | `/api/supermarkets`                        | List all supermarkets for landing page.    |
+| GET    | `/api/supermarkets/:id`                    | Get supermarket details by id.             |
+| GET    | `/api/supermarket-menu?supermarketId=<id>` | Get grocery items for a given supermarket. |
+
+**Authentication**
+
+| Method | Path                             | Description                         |
+| ------ | -------------------------------- | ----------------------------------- |
+| POST   | `/api/supermarket-auth/register` | Register a new supermarket (owner). |
+| POST   | `/api/supermarket-auth/login`    | Log in a supermarket owner/admin.   |
+| POST   | `/api/supermarket-auth/logout`   | End supermarket session.            |
+
+**Dashboard**
+
+| Method | Path                                   | Description                                          |
+| ------ | -------------------------------------- | ---------------------------------------------------- |
+| GET    | `/api/supermarket-dashboard/data`      | Fetch supermarket profile, items, and open orders.   |
+| POST   | `/api/supermarket-dashboard/items`     | Create a new grocery item.                           |
+| PATCH  | `/api/supermarket-dashboard/items/:id` | Update an existing item (price, availability, etc.). |
+| DELETE | `/api/supermarket-dashboard/items/:id` | Delete an item.                                      |
+
+All supermarket dashboard routes rely on `req.session.supermarketId` (set by `SupermarketAuth`) thanks to the dedicated `supermarket.sid` session cookie.
 
 ---
 
-✅ *Order. Code. Earn. Every bite makes you smarter.*
+### ♟️ 4. Chess Puzzle APIs
+
+**Router:** `routes/chessChallenges.js`
+**Base path:** `/api/chess-challenge`
+
+Typical endpoints:
+
+| Method | Path                                    | Description                                                       |
+| ------ | --------------------------------------- | ----------------------------------------------------------------- |
+| GET    | `/api/chess-challenge/next?difficulty=` | Returns the next chess puzzle for the given difficulty.           |
+| POST   | `/api/chess-challenge/complete`         | Submits the user’s solution; validates moves and issues a coupon. |
+
+* Uses `req.session.customerId` to associate puzzle attempts and coupons with a specific user.
+* Integrated into the **order flow** so that solving a puzzle during/after an order creates a coupon that is:
+
+  * Stored via `routes/coupons.js`.
+  * Applied at checkout when the user places their next order.
+
+Frontend integration lives in the JS for:
+
+* `track-order.html` or a dedicated **“Play Chess”** popup.
+* Coupon banner and cart calculation logic.
+
+
+This should give you a clear “what changed for proj3” story:
+high-level explanation ➝ where the code lives ➝ which APIs were introduced/extended for each of the four new features.
