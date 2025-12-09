@@ -15,8 +15,8 @@
   </a>
 
   <!-- Complete Code Coverage -->
-  <a href="https://codecov.io/gh/Divyaka9/SE-sec2_g3">
-    <img src="https://codecov.io/gh/Divyaka9/SE-sec2_g3/branch/main/graph/badge.svg" />
+  <a href="https://codecov.io/gh/smruthibt/SE-sec2_g3">
+    <img src="https://codecov.io/gh/smruthibt/SE-sec2_g3/branch/main/graph/badge.svg" />
   </a>
 
   <!-- License -->
