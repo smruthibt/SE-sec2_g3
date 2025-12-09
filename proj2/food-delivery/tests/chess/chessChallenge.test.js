@@ -132,3 +132,187 @@ test("failing chess challenge marks order as FAILED and does not create coupon",
   const coupons = await Coupon.find({ userId: customerId }).lean();
   expect(coupons.length).toBe(0);
 });
+
+test("unsupported difficulty is rejected", async () => {
+  await registerAndLoginCustomer(agent);
+  const customerId = await getCustomerId(agent);
+
+  const rest = await createRestaurant();
+  const { insertedId } = await mongoose.connection
+    .collection("orders")
+    .insertOne({
+      userId: new mongoose.Types.ObjectId(customerId),
+      customerId,
+      restaurantId: rest._id,
+      status: "out_for_delivery",
+      paymentStatus: "paid",
+      challengeStatus: "NOT_STARTED",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const res = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: insertedId.toString(), difficulty: "insane", success: true })
+    .expect(400);
+
+  expect(res.body.error).toMatch(/difficulty/i);
+});
+
+test("difficulty is case-insensitive (HARD allowed)", async () => {
+  await registerAndLoginCustomer(agent);
+  const customerId = await getCustomerId(agent);
+  const rest = await createRestaurant();
+
+  const { insertedId } = await mongoose.connection
+    .collection("orders")
+    .insertOne({
+      userId: new mongoose.Types.ObjectId(customerId),
+      customerId,
+      restaurantId: rest._id,
+      status: "out_for_delivery",
+      paymentStatus: "paid",
+      challengeStatus: "NOT_STARTED",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const res = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: insertedId.toString(), difficulty: "HARD", success: true })
+    .expect(200);
+
+  expect(res.body.ok).toBe(true);
+  expect(res.body.success).toBe(true);
+  expect(res.body.coupon.discountPct).toBe(15);
+});
+
+test("order with ineligible status cannot be completed", async () => {
+  await registerAndLoginCustomer(agent);
+  const customerId = await getCustomerId(agent);
+  const rest = await createRestaurant();
+
+  const { insertedId } = await mongoose.connection
+    .collection("orders")
+    .insertOne({
+      userId: new mongoose.Types.ObjectId(customerId),
+      customerId,
+      restaurantId: rest._id,
+      status: "delivered",
+      paymentStatus: "paid",
+      challengeStatus: "NOT_STARTED",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const res = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: insertedId.toString(), difficulty: "easy", success: true })
+    .expect(400);
+
+  expect(res.body.error).toMatch(/eligible/i);
+});
+
+test("order belonging to another user currently succeeds (documents current behavior)", async () => {
+  // Note: current implementation allows cross-user completion; this test documents behavior
+  if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+    await mongoose.connection.db.dropDatabase();
+  }
+
+  await registerAndLoginCustomer(agent);
+  const ownerId = await getCustomerId(agent);
+  const rest = await createRestaurant();
+
+  const { insertedId } = await mongoose.connection
+    .collection("orders")
+    .insertOne({
+      userId: new mongoose.Types.ObjectId(ownerId),
+      customerId: ownerId,
+      restaurantId: rest._id,
+      status: "out_for_delivery",
+      paymentStatus: "paid",
+      challengeStatus: "NOT_STARTED",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const otherAgent = await newAgent();
+  const otherEmail = `other_${Date.now()}@test.com`;
+  await registerAndLoginCustomer(otherAgent, { email: otherEmail });
+  const otherId = await getCustomerId(otherAgent);
+  expect(otherId).not.toBe(ownerId);
+
+  const res = await otherAgent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: insertedId.toString(), difficulty: "easy", success: true })
+    .expect(200);
+
+  // Coupon should be issued to the requesting user; helps surface ownership issues
+  expect(res.body.coupon.userId).toBe(otherId);
+});
+
+test("challenge already completed returns 400", async () => {
+  await registerAndLoginCustomer(agent);
+  const customerId = await getCustomerId(agent);
+  const rest = await createRestaurant();
+
+  const { insertedId } = await mongoose.connection
+    .collection("orders")
+    .insertOne({
+      userId: new mongoose.Types.ObjectId(customerId),
+      customerId,
+      restaurantId: rest._id,
+      status: "out_for_delivery",
+      paymentStatus: "paid",
+      challengeStatus: "completed",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+  const res = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: insertedId.toString(), difficulty: "easy", success: true })
+    .expect(400);
+
+  expect(res.body.error).toMatch(/already completed/i);
+});
+
+test("status out_for_delivery is allowed, preparing is not", async () => {
+  await registerAndLoginCustomer(agent);
+  const customerId = await getCustomerId(agent);
+  const rest = await createRestaurant();
+
+  const enrouteOrder = await mongoose.connection.collection("orders").insertOne({
+    userId: new mongoose.Types.ObjectId(customerId),
+    customerId,
+    restaurantId: rest._id,
+    status: "out_for_delivery",
+    paymentStatus: "paid",
+    challengeStatus: "NOT_STARTED",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const okRes = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: enrouteOrder.insertedId.toString(), difficulty: "easy", success: true })
+    .expect(200);
+  expect(okRes.body.success).toBe(true);
+
+  const preparingOrder = await mongoose.connection.collection("orders").insertOne({
+    userId: new mongoose.Types.ObjectId(customerId),
+    customerId,
+    restaurantId: rest._id,
+    status: "preparing",
+    paymentStatus: "paid",
+    challengeStatus: "NOT_STARTED",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const badRes = await agent
+    .post("/api/chess-challenge/complete")
+    .send({ orderId: preparingOrder.insertedId.toString(), difficulty: "easy", success: true })
+    .expect(400);
+  expect(badRes.body.error).toMatch(/eligible/i);
+});

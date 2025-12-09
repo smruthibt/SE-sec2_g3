@@ -159,10 +159,23 @@
           if (!orderRes.ok) throw new Error("Failed to fetch order");
           const order = await orderRes.json();
           setOrderData(order);
+          console.log(order)
+          const driverLat =
+          order.restaurantDetails?.coordinates?.[1] ??
+          order.supermarketDetails?.coordinates?.[1];
 
-          const driverLoc = { lat: order.restaurantDetails.coordinates[1], lng: order.restaurantDetails.coordinates[0] };
-          const customerLoc = { lat: order.customerDetails.coordinates[1], lng: order.customerDetails.coordinates[0] };
+          const driverLng =
+          order.restaurantDetails?.coordinates?.[0] ??
+          order.supermarketDetails?.coordinates?.[0];
+
+          const driverLoc = { lat: driverLat, lng: driverLng };
+          console.log(driverLoc)
+          const customerLoc = {
+          lat: order.customerDetails.coordinates[1],
+          lng: order.customerDetails.coordinates[0],
+          };
           setDriverLocation(driverLoc);
+          
 
           if (googleMapRef.current) {
             updateDriverPosition(driverLoc);

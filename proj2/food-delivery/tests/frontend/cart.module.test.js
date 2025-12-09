@@ -72,4 +72,19 @@ describe('cart.js helpers', () => {
     expect(findItem(items, 'x')).toEqual({ id:'x', price:1, qty:1 });
     expect(findItem(items, 'z')).toBeNull();
   });
+
+  test('setQty with negative value removes item and does not mutate original array', () => {
+    const original = [{ id:'a', price:2, qty:2 }];
+    const next = setQty(original, 'a', -5);
+    expect(next.find(x => x.id==='a')).toBeUndefined();
+    // original remains unchanged
+    expect(original[0].qty).toBe(2);
+  });
+
+  test('addItem does not mutate original array', () => {
+    const original = [{ id:'a', price:1, qty:1 }];
+    const next = addItem(original, { id:'a', price:1 });
+    expect(next.find(x => x.id==='a').qty).toBe(2);
+    expect(original[0].qty).toBe(1);
+  });
 });

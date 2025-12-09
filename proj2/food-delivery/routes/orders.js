@@ -284,6 +284,14 @@ router.get("/:orderId", async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: "supermarkets",  // Collection name (lowercase, pluralized)
+          localField: "restaurantId",  // Field in Order
+          foreignField: "_id",  // Field in RestaurantAuth
+          as: "supermarketDetails"
+        }
+      },
+      {
         $unwind: {
           path: "$customerDetails",
           preserveNullAndEmptyArrays: true
@@ -292,6 +300,12 @@ router.get("/:orderId", async (req, res) => {
       {
         $unwind: {
           path: "$restaurantDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: "$supermarketDetails",
           preserveNullAndEmptyArrays: true
         }
       }

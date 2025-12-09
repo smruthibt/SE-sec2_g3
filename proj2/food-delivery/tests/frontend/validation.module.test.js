@@ -44,4 +44,15 @@ describe('validation.js', () => {
     expect(mod.isNonEmpty('   ')).toBe(false);
     expect(mod.isNonEmpty('x')).toBe(true);
   });
+
+  test('validateEmail: trims whitespace and rejects non-strings', () => {
+    expect(mod.validateEmail('  spaced@example.com  ')).toBe(true);
+    expect(mod.validateEmail(null)).toBe(false);
+    expect(mod.validateEmail(undefined)).toBe(false);
+  });
+
+  test('sanitizeText: non-string yields empty string', () => {
+    expect(mod.sanitizeText(null)).toBe('');
+    expect(mod.sanitizeText(123)).toBe('');
+  });
 });

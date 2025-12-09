@@ -84,6 +84,16 @@ test("GET /api/supermarket-dashboard/data requires auth and returns menu+orders"
   ).toBe(true);
 });
 
+test("GET /api/supermarket-dashboard/data returns ok with empty arrays when no items/orders", async () => {
+  const isolated = await newAgent();
+  await registerAndLoginSupermarket(isolated, { email: "empty@test.com" });
+
+  const res = await isolated.get("/api/supermarket-dashboard/data").expect(200);
+  expect(res.body.ok).toBe(true);
+  expect(res.body.menuItems).toEqual([]);
+  expect(res.body.orders).toEqual([]);
+});
+
 test("POST /api/supermarket-dashboard/photo validates imageUrl and updates supermarket", async () => {
   const { supermarketId } = await registerAndLoginSupermarket(agent);
 
@@ -287,6 +297,14 @@ test("Supermarket catalog: /api/supermarkets and /api/supermarket-menu", async (
   ).toBe(true);
 });
 
+test("GET /api/supermarkets/:id returns 404 for well-formed missing id", async () => {
+  await registerAndLoginSupermarket(agent);
+  const missingId = new mongoose.Types.ObjectId().toString();
+
+  const res = await agent.get(`/api/supermarkets/${missingId}`).expect(404);
+  expect(res.body.error).toMatch(/not found/i);
+});
+
 test("PATCH /api/supermarket-dashboard/menu/:id/availability flips isAvailable", async () => {
   const { supermarketId } = await registerAndLoginSupermarket(agent);
 
@@ -314,6 +332,45 @@ test("PATCH /api/supermarket-dashboard/menu/:id/availability flips isAvailable",
 
   const dbItem = await SupermarketItem.findById(itemId).lean();
   expect(dbItem).toBeTruthy();
+  expect(dbItem.isAvailable).toBe(false);
+});
+
+test("POST /api/supermarket-dashboard/menu sets default availability true when omitted", async () => {
+  const { supermarketId } = await registerAndLoginSupermarket(agent);
+
+  const res = await agent
+    .post("/api/supermarket-dashboard/menu")
+    .send({
+      name: "Default Availability",
+      description: "Should default to true",
+      price: 3.33,
+      imageUrl: "/uploads/default.jpg",
+    })
+    .expect(201);
+
+  expect(res.body.item.isAvailable).toBe(true);
+
+  const dbItem = await SupermarketItem.findById(res.body.item._id).lean();
+  expect(dbItem.isAvailable).toBe(true);
+});
+
+test("POST /api/supermarket-dashboard/menu respects explicit isAvailable false", async () => {
+  await registerAndLoginSupermarket(agent);
+
+  const res = await agent
+    .post("/api/supermarket-dashboard/menu")
+    .send({
+      name: "Explicitly Off",
+      description: "Should be unavailable",
+      price: 4.44,
+      imageUrl: "/uploads/off.jpg",
+      isAvailable: false,
+    })
+    .expect(201);
+
+  expect(res.body.item.isAvailable).toBe(false);
+
+  const dbItem = await SupermarketItem.findById(res.body.item._id).lean();
   expect(dbItem.isAvailable).toBe(false);
 });
 
@@ -405,4 +462,68 @@ test("DELETE /api/supermarket-dashboard/menu/:id removes an item", async () => {
 
   const dbItem = await SupermarketItem.findById(itemId).lean();
   expect(dbItem).toBeFalsy();
+});
+
+test("PATCH /api/supermarket-dashboard/menu/:id/availability rejects items from another supermarket", async () => {
+  const agentA = await newAgent();
+  const agentB = await newAgent();
+
+  await registerAndLoginSupermarket(agentA, { email: "a@test.com" });
+  await registerAndLoginSupermarket(agentB, { email: "b@test.com" });
+
+  const createRes = await agentA
+    .post("/api/supermarket-dashboard/menu")
+    .send({
+      name: "Competitor Item",
+      description: "Should not be editable by other market",
+      price: 9.99,
+      imageUrl: "/uploads/comp.jpg",
+      isAvailable: true,
+    })
+    .expect(201);
+
+  const itemId = createRes.body.item._id;
+
+  const res = await agentB
+    .patch(`/api/supermarket-dashboard/menu/${itemId}/availability`)
+    .send({ isAvailable: false })
+    .expect(404);
+
+  expect(res.body.error).toMatch(/not found/i);
+
+  const dbItem = await SupermarketItem.findById(itemId).lean();
+  expect(dbItem.isAvailable).toBe(true);
+});
+
+test("DELETE /api/supermarket-dashboard/menu/:id ignores items from other supermarkets", async () => {
+  const agentA = await newAgent();
+  const agentB = await newAgent();
+
+  const { supermarketId } = await registerAndLoginSupermarket(agentA, {
+    email: "ownerA@test.com",
+  });
+  await registerAndLoginSupermarket(agentB, { email: "ownerB@test.com" }); // different market session
+
+  const createRes = await agentA
+    .post("/api/supermarket-dashboard/menu")
+    .send({
+      name: "Item To Protect",
+      description: "Should not be deleted by other market",
+      price: 5.5,
+      imageUrl: "/uploads/protect.jpg",
+      isAvailable: true,
+    })
+    .expect(201);
+
+  const itemId = createRes.body.item._id;
+
+  const res = await agentB
+    .delete(`/api/supermarket-dashboard/menu/${itemId}`)
+    .expect(404);
+
+  expect(res.body.error).toMatch(/not found/i);
+
+  const dbItem = await SupermarketItem.findById(itemId).lean();
+  expect(dbItem).toBeTruthy();
+  expect(String(dbItem.supermarketId)).toBe(String(supermarketId)); // ensure it belonged to first market
 });
