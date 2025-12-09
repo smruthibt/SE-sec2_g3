@@ -72,7 +72,7 @@ BiteCode has been developed as part of CSC510 - Software Engineering project at 
 It combines two main components:
 
 1. **Food Delivery Application**  
-   A full-stack web app built using **MongoDB, Express.js, React, and Node.js (MERN)**.  
+   A full-stack web app built using **MongoDB, Express.js, and Node.js (MERN)**.  
    It enables users to discover restaurants, browse menus, place orders, and participate in timed coding challenges that unlock instant rewards.
 
 2. **Judge0 Frontend**  
@@ -83,9 +83,16 @@ The repository also includes an **Archived** directory that stores earlier proto
 
 ---
 
+
 ## 🖥️ Demo
 
-[![Watch the demo](https://img.youtube.com/vi/nOuNoA7Y1ng/hqdefault.jpg)](https://youtu.be/nOuNoA7Y1ng)
+### ▶️ **Project Demo Video**
+📌 **Follow this Link:**  
+https://www.youtube.com/watch?v=2uti5h4jWtI&t=3s
+
+## 📄 Project Poster  
+📌 **Poster Link:**  
+https://drive.google.com/drive/folders/11LtHBsUI6rNNK4KWv_o85h0LGWPRFcAt
 
 ---
 
@@ -99,7 +106,7 @@ The repository also includes an **Archived** directory that stores earlier proto
 ---
 
 ## 🌟 Why Choose Our Project?
-[![Watch the demo](https://img.youtube.com/vi/kKXPadUnOhY/hqdefault.jpg)](https://youtu.be/kKXPadUnOhY)
+[![Watch the demo](https://img.youtube.com/vi/kKXPadUnOhY/hqdefault.jpg)](https://www.youtube.com/watch?v=2uti5h4jWtI&t=3s)
 
 Our project — **BiteCode** — blends **Food Delivery**, **Gamified Coding Challenges**, and an **Interactive Judge0 Frontend** into one cohesive full-stack system.  
 It’s not just a project to run — it’s a project you can *grow*, *extend*, and *learn from*.
@@ -112,8 +119,8 @@ It’s not just a project to run — it’s a project you can *grow*, *extend*, 
   The modular backend and decoupled frontend make adding new ideas seamless — you can go beyond food delivery.  
   💡 *Example:* Replace coding challenges with your **chess engine** — users could solve chess puzzles to earn discounts and rewards, leveraging the same “challenge” architecture!
 
-- **Comprehensive Testing (161 Tests!):**  
-  The system is battle-tested with **161 Jest + Pytest testcases**, covering:
+- **Comprehensive Testing (Tests!):**  
+  The system is battle-tested with **Jest + Pytest testcases**, covering:
   - Customer, restaurant, driver, and payment workflows  
   - Coupon and challenge APIs  
   - Frontend UI interactions and API integration  
@@ -122,16 +129,8 @@ It’s not just a project to run — it’s a project you can *grow*, *extend*, 
   This extensive coverage ensures stability and a reliable foundation for future enhancements.
 
 ### 🧠 Ideas for Future Contributors
-1. **Adaptive Challenge Difficulty:**  
-   Dynamically adjust coding (or chess) challenge difficulty based on a user’s **order frequency, accuracy, or past performance**.
 
-2. **Chess Engine Integration:**  
-   Hook up your **own chess engine** — share your toughest positions and let users solve puzzles to **earn discounts** on their orders.
-
-3. **Driver Geolocation Tracking:**  
-   Integrate **Google Maps APIs** to enable live **driver location tracking**, route visualization, and estimated delivery times.
-
-4. **UI/UX & Stability Enhancements:**  
+1. **UI/UX & Stability Enhancements:**  
    Improve responsiveness, add dark mode, refine transitions, and enhance dashboard consistency for customers, restaurants, and drivers.
 
 5. **Payment & Security Upgrades:**  
@@ -141,7 +140,7 @@ It’s not just a project to run — it’s a project you can *grow*, *extend*, 
    Create dashboards for tracking performance, average delivery time, and challenge completion rates; reward consistent solvers or fast deliveries.
 
 ### 📈 Code Quality & Coverage
-- **Extensive Testing:** 161 unit, integration, and end-to-end testcases across Python and JavaScript.  
+- **Extensive Testing:**  Unit, integration, and end-to-end testcases across Python and JavaScript.  
 - **Continuous Integration:** GitHub Actions CI pipelines automatically run backend + frontend test suites on every commit.  
 - **Structured Documentation:** Each module (models, routes, public JS, and frontend tests) has detailed `.md` documentation to ease onboarding.  
 - **Clear Contribution Path:** Well-defined `CODE_OF_CONDUCT.md` and `CONTRIBUTING.md` files guide newcomers through setup and best practices.
@@ -221,24 +220,6 @@ You can modify `src/config.js` to point to your own hosted Judge0 instance.
 
 ---
 
-## 🧠 Features
-
-### 🍴 Food Delivery (Bite)
-- Browse and search restaurants  
-- Place and track orders  
-- Earn real-time discounts by solving coding challenges  
-- Reward system integrated with checkout flow  
-- Admin features for menu & restaurant management
-
-### 💻 Judge0 Frontend (Code)
-- Compile and execute code in real time  
-- Supports multiple languages (Python, C++, Java and JavaScript as of now)  
-- Validate against predefined test cases  
-- Reward/discount calculation based on correctness and time  
-- Built using modular React components and REST API integration
-
----
-
 ## 📘 Use Cases
 
 - **Gamified Ordering Experience:** Encourages logical thinking while waiting for food delivery.  
@@ -252,13 +233,13 @@ You can modify `src/config.js` to point to your own hosted Judge0 instance.
 
 | Category | Technologies |
 |-----------|--------------|
-| Frontend | React, Bootstrap, Axios |
+| Frontend | Bootstrap, Axios |
 | Backend | Node.js, Express.js |
 | Database | MongoDB |
 | APIs | Judge0 (Open Source Execution API) |
 | Testing | Jest, React Testing Library, pytest |
 | Dev Tools | npm, Git, VS Code |
-| DevOps Tools | Docker |
+
 
 ---
 
@@ -296,25 +277,33 @@ The name is unique, created specifically for this project, and free from any kno
 | Mahek Kantharia | mrkantha@ncsu.edu |
 
 ---
+## 🧑‍🤝‍🧑 Enhanced by
 
-## ✨ Achieved Milestones
-- Developed a complete multi-role food delivery system supporting customers, restaurants, and drivers, with seamless order creation, assignment, and fulfillment workflows.
-- Integrated a coding challenge micro-platform (Judge0) that dynamically generates cashback or coupon rewards based on challenge difficulty and user performance.
-- Engineered automated coupon application logic — earned rewards are stored, validated, and directly applied during checkout for the next food order.
-- Designed responsive, role-specific dashboards for restaurants, drivers, and customers with intuitive interfaces for menu management, order tracking, and payment processing.
-- Implemented modular backend architecture using Express + MongoDB with clean separation of routes, models, and configurations, ensuring scalability and ease of testing.
+| Name | Email id  |
+|------| ----------|
+| Shreyas Raviprasad | sravipr@ncsu.edu |
+| Smruthi Bangalore Tandava Murthy | dsbangal6@ncsu.edu |
+| Swasti Sadanand | ssadana@ncsu.edu |
+| Vineeta Vishwas Bhujle | vbhujle@ncsu.edu |
 
 ---
 
-## 🏁 Future Enhancements
+## ✨ Project 3 Milestones
+- Integrated a chess-puzzle mini-game backed by a chess engine, letting customers solve tactics to earn dynamic discount coupons.
+- Built a separate supermarket partner dashboard for inventory management, order tracking, and donation workflows.
+- Added Google Maps integration to visualize store locations, delivery routes, and live ETAs during order tracking.
+- Developed a collaborative-filtering recommendation module to suggest personalized dishes and restaurants based on user purchase patterns.
 
-- Adaptive Challenge Difficulty: Adjust coding task levels based on order frequency and past performance.
-- Hook up your chess engine, share your toughest positions, and let players earn rewards solving them!
-- Geolocation Tracking: Enable live driver location and delivery ETA via Google Maps integration.
-- UI/UX & Stability Enhancements: Improve responsiveness, consistency, and overall performance across dashboards.
-- Payment & Security Upgrades: Strengthen payment flows with verification, refunds, and secure logging.
-- Unified login system for both modules (SSO)  
-- Mobile-friendly PWA version  
+<p align="center">
+  <img src="./food-delivery/public/assets/Chess%20engine.png" width="400" />
+  <img src="./food-delivery/public/assets/Live%20order%20tracking.png" width="400" />
+  <img src="./food-delivery/public/assets/Reccomendation%20System.png" width="400" />
+  <img src="./food-delivery/public/assets/Supermarket%20Integration.png" width="400" />
+</p>
+
+
+
+
 
 ---
 
